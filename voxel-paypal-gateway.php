@@ -4,8 +4,8 @@
  * Plugin URI: https://your-site.com/voxel-paypal-gateway
  * Description: Seamless PayPal payment gateway integration for Voxel theme. Supports PayPal Checkout, subscriptions, and marketplace payments.
  * Version: 1.0.0
- * Author: Your Company
- * Author URI: https://your-site.com
+ * Author: Code Wattz
+ * Author URI: https://codewattz.com
  * Text Domain: voxel-paypal-gateway
  * Domain Path: /languages
  * Requires at least: 6.0
@@ -25,6 +25,185 @@ define( 'VOXEL_PAYPAL_VERSION', '1.0.0' );
 define( 'VOXEL_PAYPAL_FILE', __FILE__ );
 define( 'VOXEL_PAYPAL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'VOXEL_PAYPAL_URL', plugin_dir_url( __FILE__ ) );
+
+/**
+ * Initialize licensing system
+ */
+function init_licensing() {
+	// Load licensing classes
+	if ( ! class_exists( '\VoxelPayPal\FluentLicensing' ) ) {
+		require_once VOXEL_PAYPAL_PATH . 'updater/FluentLicensing.php';
+	}
+
+	// Register licensing
+	$licensing = new \VoxelPayPal\FluentLicensing();
+	$licensing->register( [
+		'version'  => VOXEL_PAYPAL_VERSION,
+		'item_id'  => '462',
+		'basename' => plugin_basename( __FILE__ ),
+		'api_url'  => 'https://codewattz.com/',
+	] );
+
+	// Load license settings page
+	if ( ! class_exists( '\VoxelPayPal\LicenseSettings' ) ) {
+		require_once VOXEL_PAYPAL_PATH . 'updater/LicenseSettings.php';
+	}
+
+	// Initialize license settings page
+	$license_settings = new \VoxelPayPal\LicenseSettings();
+	$license_settings->register( $licensing )
+		->setConfig( [
+			'menu_title'   => 'Voxel PayPal License',
+			'page_title'   => 'Voxel PayPal Gateway License',
+			'title'        => 'Voxel PayPal Gateway License',
+			'license_key'  => 'License Key',
+			'purchase_url' => 'https://codewattz.com/voxel-paypal-gateway/',
+			'account_url'  => 'https://codewattz.com/account/',
+			'plugin_name'  => 'Voxel PayPal Gateway',
+		] )
+		->addPage( [
+			'type'        => 'options', // Add under Settings menu
+			'parent_slug' => '', // Not needed for options page
+		] );
+}
+
+// Initialize licensing early
+add_action( 'plugins_loaded', __NAMESPACE__ . '\\init_licensing', 1 );
+
+/**
+ * Add license link to plugin actions on Plugins page
+ */
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function( $links ) {
+	$license_link = sprintf(
+		'<a href="%s">%s</a>',
+		admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' ),
+		__( 'License', 'voxel-paypal-gateway' )
+	);
+
+	// Add license link at the beginning
+	array_unshift( $links, $license_link );
+
+	return $links;
+} );
+
+/**
+ * Show admin notices for license status
+ */
+add_action( 'admin_notices', function() {
+	// Don't show on license settings page
+	if ( isset( $_GET['page'] ) && $_GET['page'] === 'voxel-paypal-gateway-manage-license' ) {
+		return;
+	}
+
+	try {
+		$licensing = \VoxelPayPal\FluentLicensing::getInstance();
+		$status = $licensing->getStatus();
+		$license_url = admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' );
+
+		// License not activated
+		if ( empty( $status['status'] ) || $status['status'] === 'unregistered' ) {
+			?>
+			<div class="notice notice-error">
+				<p>
+					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+					<?php _e( 'License activation required. The plugin will not function until you activate your license.', 'voxel-paypal-gateway' ); ?>
+					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Activate License', 'voxel-paypal-gateway' ); ?></a>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// License invalid or error
+		if ( $status['status'] === 'invalid' || $status['status'] === 'error' ) {
+			?>
+			<div class="notice notice-error">
+				<p>
+					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+					<?php _e( 'Your license is invalid. Please check your license key or contact support.', 'voxel-paypal-gateway' ); ?>
+					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-paypal-gateway' ); ?></a>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// License disabled
+		if ( $status['status'] === 'disabled' ) {
+			?>
+			<div class="notice notice-error">
+				<p>
+					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+					<?php _e( 'Your license has been disabled. Please contact support for assistance.', 'voxel-paypal-gateway' ); ?>
+					<a href="https://codewattz.com/account/" target="_blank"><?php _e( 'Contact Support', 'voxel-paypal-gateway' ); ?></a>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// Check if license is expired (only if valid status but needs remote check)
+		if ( $status['status'] === 'valid' && isset( $status['expires'] ) && $status['expires'] !== 'lifetime' ) {
+			$expiry_date = strtotime( $status['expires'] );
+			$current_date = current_time( 'timestamp' );
+			$days_until_expiry = ( $expiry_date - $current_date ) / DAY_IN_SECONDS;
+
+			// Show warning if expiring in 7 days or less
+			if ( $days_until_expiry <= 7 && $days_until_expiry >= 0 ) {
+				?>
+				<div class="notice notice-warning">
+					<p>
+						<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+						<?php printf( __( 'Your license will expire in %d days. Renew now to continue receiving updates and support.', 'voxel-paypal-gateway' ), ceil( $days_until_expiry ) ); ?>
+						<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-paypal-gateway' ); ?></a>
+					</p>
+				</div>
+				<?php
+			}
+
+			// Show error if already expired
+			if ( $days_until_expiry < 0 ) {
+				?>
+				<div class="notice notice-error">
+					<p>
+						<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+						<?php _e( 'Your license has expired. Please renew to continue using the plugin.', 'voxel-paypal-gateway' ); ?>
+						<a href="https://codewattz.com/voxel-paypal-gateway/" target="_blank"><?php _e( 'Renew License', 'voxel-paypal-gateway' ); ?></a>
+					</p>
+				</div>
+				<?php
+			}
+		}
+	} catch ( \Exception $e ) {
+		// Licensing not initialized - show error
+		?>
+		<div class="notice notice-error">
+			<p>
+				<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
+				<?php _e( 'License system not initialized. Please deactivate and reactivate the plugin.', 'voxel-paypal-gateway' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+} );
+
+/**
+ * Check if license is valid
+ *
+ * @return bool True if license is valid, false otherwise
+ */
+function is_license_valid() {
+	try {
+		$licensing = \VoxelPayPal\FluentLicensing::getInstance();
+		$status = $licensing->getStatus();
+
+		// Check if license status is 'valid'
+		return isset( $status['status'] ) && $status['status'] === 'valid';
+	} catch ( \Exception $e ) {
+		// If licensing is not initialized, consider it invalid
+		return false;
+	}
+}
 
 /**
  * Check if Voxel theme is active
@@ -57,6 +236,11 @@ function check_voxel_theme() {
  * Initialize the plugin
  */
 function init_plugin() {
+	// Check license first - block everything if invalid
+	if ( ! is_license_valid() ) {
+		return;
+	}
+
 	if ( ! check_voxel_theme() ) {
 		return;
 	}
@@ -93,6 +277,11 @@ add_action( 'init', __NAMESPACE__ . '\\init_plugin', 0 );
  * Register PayPal payment service directly with lower priority to appear after Stripe/Paddle
  */
 add_filter( 'voxel/product-types/payment-services', function( $payment_services ) {
+	// Check license - don't register service if invalid
+	if ( ! is_license_valid() ) {
+		return $payment_services;
+	}
+
 	if ( ! class_exists( '\VoxelPayPal\PayPal_Payment_Service' ) ) {
 		return $payment_services;
 	}
