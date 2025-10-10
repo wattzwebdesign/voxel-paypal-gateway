@@ -202,6 +202,9 @@ class PayPal_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_M
 			// Set order status
 			if ( $capture['status'] === 'COMPLETED' ) {
 				$this->order->set_status( \Voxel\ORDER_COMPLETED );
+
+				// Process vendor payout if marketplace order
+				$this->process_marketplace_payout();
 			} elseif ( $capture['status'] === 'PENDING' ) {
 				$this->order->set_status( \Voxel\ORDER_PENDING_PAYMENT );
 			}
@@ -328,5 +331,63 @@ class PayPal_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_M
 		}
 
 		return $actions;
+	}
+
+	/**
+	 * Process marketplace payout to vendor
+	 */
+	protected function process_marketplace_payout(): void {
+		// Check if this is a marketplace order
+		$is_marketplace_order = \VoxelPayPal\PayPal_Connect_Client::is_marketplace_order( $this->order );
+
+		if ( ! $is_marketplace_order ) {
+			return;
+		}
+
+		// Check auto-payout setting
+		$auto_payout = (bool) \Voxel\get( 'payments.paypal.marketplace.auto_payout', '1' );
+
+		if ( ! $auto_payout ) {
+			return;
+		}
+
+		// Check payout delay
+		$payout_delay_days = intval( \Voxel\get( 'payments.paypal.marketplace.payout_delay_days', 0 ) );
+
+		if ( $payout_delay_days > 0 ) {
+			// Schedule payout for later
+			$this->schedule_delayed_payout( $payout_delay_days );
+			return;
+		}
+
+		// Process payout immediately
+		$result = \VoxelPayPal\PayPal_Connect_Client::process_order_payout( $this->order );
+
+		if ( ! $result['success'] ) {
+			// Log error but don't fail the order
+			error_log( sprintf(
+				'PayPal Payout Error: Failed to create payout for order #%d: %s',
+				$this->order->get_id(),
+				$result['error'] ?? 'Unknown error'
+			) );
+
+			// Store error for admin review
+			$this->order->set_details( 'marketplace.payout_error', $result['error'] ?? 'Unknown error' );
+			$this->order->save();
+		}
+	}
+
+	/**
+	 * Schedule delayed payout
+	 */
+	protected function schedule_delayed_payout( int $delay_days ): void {
+		$timestamp = time() + ( $delay_days * DAY_IN_SECONDS );
+
+		wp_schedule_single_event( $timestamp, 'voxel/paypal/process-delayed-payout', [
+			'order_id' => $this->order->get_id(),
+		] );
+
+		$this->order->set_details( 'marketplace.payout_scheduled_at', $timestamp );
+		$this->order->save();
 	}
 }

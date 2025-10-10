@@ -21,7 +21,7 @@ class PayPal_Payment_Service extends \Voxel\Product_Types\Payment_Services\Base_
 	}
 
 	public function get_description(): ?string {
-		return 'Accept payments via PayPal Checkout. Supports one-time payments and marketplace transactions.';
+		return 'Accept payments via PayPal Checkout. Supports one-time payments, subscriptions, and marketplace transactions with vendor payouts.';
 	}
 
 	public function is_test_mode(): bool {
@@ -55,6 +55,15 @@ class PayPal_Payment_Service extends \Voxel\Product_Types\Payment_Services\Base_
 				'order_approval' => \Voxel\Utils\Config_Schema\Schema::Enum( [ 'automatic', 'manual' ] )->default('automatic'),
 				'brand_name' => \Voxel\Utils\Config_Schema\Schema::String()->default(''),
 				'landing_page' => \Voxel\Utils\Config_Schema\Schema::Enum( [ 'LOGIN', 'BILLING', 'NO_PREFERENCE' ] )->default('NO_PREFERENCE'),
+			] ),
+
+			'marketplace' => \Voxel\Utils\Config_Schema\Schema::Object( [
+				'enabled' => \Voxel\Utils\Config_Schema\Schema::String()->default('0'),
+				'fee_type' => \Voxel\Utils\Config_Schema\Schema::Enum( [ 'fixed', 'percentage' ] )->default('percentage'),
+				'fee_value' => \Voxel\Utils\Config_Schema\Schema::String()->default('10'),
+				'auto_payout' => \Voxel\Utils\Config_Schema\Schema::String()->default('1'),
+				'payout_delay_days' => \Voxel\Utils\Config_Schema\Schema::String()->default('0'),
+				'shipping_responsibility' => \Voxel\Utils\Config_Schema\Schema::Enum( [ 'platform', 'vendor' ] )->default('vendor'),
 			] ),
 		] );
 	}

@@ -292,4 +292,37 @@ class PayPal_Client {
 			],
 		] );
 	}
+
+	/**
+	 * Create payout (for marketplace vendor payments)
+	 */
+	public static function create_payout( array $payout_data ): array {
+		return self::make_request( '/v1/payments/payouts', [
+			'method' => 'POST',
+			'body' => $payout_data,
+		] );
+	}
+
+	/**
+	 * Get payout details
+	 */
+	public static function get_payout( string $payout_batch_id ): array {
+		return self::make_request( "/v1/payments/payouts/{$payout_batch_id}" );
+	}
+
+	/**
+	 * Get payout item details
+	 */
+	public static function get_payout_item( string $payout_item_id ): array {
+		return self::make_request( "/v1/payments/payouts-item/{$payout_item_id}" );
+	}
+
+	/**
+	 * Cancel unclaimed payout item
+	 */
+	public static function cancel_payout_item( string $payout_item_id ): array {
+		return self::make_request( "/v1/payments/payouts-item/{$payout_item_id}/cancel", [
+			'method' => 'POST',
+		] );
+	}
 }

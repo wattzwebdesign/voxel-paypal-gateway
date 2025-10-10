@@ -177,6 +177,74 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 	</div>
 </div>
 
+<!-- Marketplace Settings -->
+<div class="ts-group">
+	<div class="ts-group-head">
+		<h3><?php _e( 'Marketplace Settings', 'voxel-paypal-gateway' ); ?></h3>
+	</div>
+	<div class="x-row">
+		<?php \Voxel\Utils\Form_Models\Select_Model::render( [
+			'v-model' => 'settings.marketplace.enabled',
+			'label' => 'Marketplace Mode',
+			'classes' => 'x-col-6',
+			'choices' => [
+				'0' => 'Disabled',
+				'1' => 'Enabled',
+			],
+			'description' => 'Enable to split payments between platform and vendors',
+		] ) ?>
+
+		<template v-if="settings.marketplace.enabled == '1' || settings.marketplace.enabled === true || settings.marketplace.enabled === 1">
+			<?php \Voxel\Utils\Form_Models\Select_Model::render( [
+				'v-model' => 'settings.marketplace.fee_type',
+				'label' => 'Platform Fee Type',
+				'classes' => 'x-col-6',
+				'choices' => [
+					'percentage' => 'Percentage of sale',
+					'fixed' => 'Fixed amount per sale',
+				],
+			] ) ?>
+
+			<?php \Voxel\Utils\Form_Models\Text_Model::render( [
+				'v-model' => 'settings.marketplace.fee_value',
+				'label' => 'Fee Value',
+				'classes' => 'x-col-6',
+				'placeholder' => '10',
+				'description' => 'Percentage (e.g., 10 for 10%) or fixed amount',
+			] ) ?>
+
+			<?php \Voxel\Utils\Form_Models\Select_Model::render( [
+				'v-model' => 'settings.marketplace.auto_payout',
+				'label' => 'Automatic Payouts',
+				'classes' => 'x-col-6',
+				'choices' => [
+					'0' => 'Manual - Admin initiates payouts',
+					'1' => 'Automatic - Send on order completion',
+				],
+				'description' => 'Choose when to send payouts to vendors',
+			] ) ?>
+
+			<?php \Voxel\Utils\Form_Models\Text_Model::render( [
+				'v-model' => 'settings.marketplace.payout_delay_days',
+				'label' => 'Payout Delay (Days)',
+				'classes' => 'x-col-6',
+				'placeholder' => '0',
+				'description' => 'Days to wait before sending payout (0 = immediate)',
+			] ) ?>
+
+			<?php \Voxel\Utils\Form_Models\Select_Model::render( [
+				'v-model' => 'settings.marketplace.shipping_responsibility',
+				'label' => 'Shipping Handled By',
+				'classes' => 'x-col-12',
+				'choices' => [
+					'vendor' => 'Vendor handles shipping',
+					'platform' => 'Platform handles shipping',
+				],
+			] ) ?>
+		</template>
+	</div>
+</div>
+
 <!-- Required Webhook Events -->
 <div class="ts-group">
 	<div class="ts-group-head">
@@ -205,6 +273,19 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 				<li><code>BILLING.SUBSCRIPTION.SUSPENDED</code></li>
 				<li><code>BILLING.SUBSCRIPTION.UPDATED</code></li>
 				<li><code>BILLING.SUBSCRIPTION.PAYMENT.FAILED</code></li>
+			</ul>
+
+			<p style="margin-top: 15px;"><strong><?php _e( 'Marketplace Payouts (if enabled):', 'voxel-paypal-gateway' ); ?></strong></p>
+			<ul style="list-style: disc; padding-left: 20px; margin-top: 5px;">
+				<li><code>PAYMENT.PAYOUTSBATCH.SUCCESS</code></li>
+				<li><code>PAYMENT.PAYOUTSBATCH.DENIED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.SUCCEEDED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.FAILED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.BLOCKED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.REFUNDED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.RETURNED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.CANCELED</code></li>
+				<li><code>PAYMENT.PAYOUTS-ITEM.UNCLAIMED</code></li>
 			</ul>
 		</div>
 	</div>
