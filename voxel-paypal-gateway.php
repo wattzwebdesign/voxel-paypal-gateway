@@ -86,16 +86,111 @@ function init_plugin() {
 	new Controllers\Frontend_Connect_Controller();
 }
 
-// Hook into WordPress
-add_action( 'after_setup_theme', __NAMESPACE__ . '\\init_plugin', 20 );
+// Initialize early but after Voxel
+add_action( 'init', __NAMESPACE__ . '\\init_plugin', 0 );
 
 /**
- * Register module with Voxel
+ * Register PayPal payment service directly with lower priority to appear after Stripe/Paddle
  */
-add_filter( 'voxel/modules', function( $modules ) {
-	$modules[] = VOXEL_PAYPAL_FILE;
-	return $modules;
-}, 10, 1 );
+add_filter( 'voxel/product-types/payment-services', function( $payment_services ) {
+	if ( ! class_exists( '\VoxelPayPal\PayPal_Payment_Service' ) ) {
+		return $payment_services;
+	}
+
+	$payment_services['paypal'] = new \VoxelPayPal\PayPal_Payment_Service();
+	return $payment_services;
+}, 100, 1 );
+
+/**
+ * Inject PayPal icon and styles into payments screen
+ */
+add_action( 'admin_head', function() {
+	// Use URL parameter check instead of screen ID
+	if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'voxel-payments' ) {
+		return;
+	}
+	?>
+	<style>
+		.paypal-panel {
+			background: #0070ba !important;
+			width: 50px;
+			height: 50px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+		.paypal-panel svg {
+			width: 28px !important;
+			height: 28px !important;
+		}
+		.paypal-panel svg path {
+			fill: #fff !important;
+		}
+		.paypal-panel svg g path {
+			fill: #fff !important;
+		}
+		.vx-panel:not(.active).provider-paypal .paypal-panel {
+			filter: grayscale(1) !important;
+			opacity: 0.6 !important;
+		}
+		.vx-panel.provider-paypal.active {
+			background: linear-gradient(45deg, rgba(0, 112, 186, .31) -20%, transparent 70%) !important;
+			border-color: rgba(0, 112, 186, .537254902) !important;
+		}
+	</style>
+	<?php
+} );
+
+add_action( 'admin_footer', function() {
+	// Only run on Voxel payments page - check URL parameter instead
+	if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'voxel-payments' ) {
+		return;
+	}
+	?>
+	<script>
+	(function() {
+		function addPayPalIcon() {
+			const paypalPanels = document.querySelectorAll('.vx-panel.provider-paypal');
+
+			if (!paypalPanels.length) {
+				return false;
+			}
+
+			var success = false;
+			paypalPanels.forEach(function(panel) {
+				if (panel.querySelector('.panel-image')) {
+					success = true;
+					return;
+				}
+
+				const iconDiv = document.createElement('div');
+				iconDiv.className = 'panel-image paypal-panel';
+				iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="7.056000232696533 3 37.35095977783203 45"><g clip-path="url(#a)"><path fill="#002991" d="M38.914 13.35c0 5.574-5.144 12.15-12.927 12.15H18.49l-.368 2.322L16.373 39H7.056l5.605-36h15.095c5.083 0 9.082 2.833 10.555 6.77a9.687 9.687 0 0 1 .603 3.58z"></path><path fill="#60CDFF" d="M44.284 23.7A12.894 12.894 0 0 1 31.53 34.5h-5.206L24.157 48H14.89l1.483-9 1.75-11.178.367-2.322h7.497c7.773 0 12.927-6.576 12.927-12.15 3.825 1.974 6.055 5.963 5.37 10.35z"></path><path fill="#008CFF" d="M38.914 13.35C37.31 12.511 35.365 12 33.248 12h-12.64L18.49 25.5h7.497c7.773 0 12.927-6.576 12.927-12.15z"></path></g></svg>';
+
+				const panelInfo = panel.querySelector('.panel-info');
+				if (panelInfo) {
+					panel.insertBefore(iconDiv, panelInfo);
+					success = true;
+				}
+			});
+
+			return success;
+		}
+
+		var attempts = 0;
+		var maxAttempts = 100;
+		var pollInterval = setInterval(function() {
+			attempts++;
+			if (addPayPalIcon() || attempts >= maxAttempts) {
+				clearInterval(pollInterval);
+			}
+		}, 100);
+	})();
+	</script>
+	<?php
+}, 100 );
 
 /**
  * Register vendor order post type

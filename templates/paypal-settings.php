@@ -245,6 +245,82 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 	</div>
 </div>
 
+<!-- Marketplace Setup Instructions -->
+<template v-if="settings.marketplace.enabled == '1' || settings.marketplace.enabled === true || settings.marketplace.enabled === 1">
+	<div class="ts-group">
+		<div class="ts-group-head">
+			<h3><?php _e( 'Marketplace Setup Guide', 'voxel-paypal-gateway' ); ?></h3>
+		</div>
+		<div class="x-row">
+			<div class="ts-form-group x-col-12">
+				<p><?php _e( 'Complete these steps to enable vendor payouts:', 'voxel-paypal-gateway' ); ?></p>
+
+				<p style="margin-top: 20px;"><strong>1. Enable PayPal Payouts API Access</strong></p>
+				<ul style="list-style: disc; padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Visit: <a href="https://www.paypal.com/businesswallet/payouts" target="_blank">https://www.paypal.com/businesswallet/payouts</a></li>
+					<li>Request access to Payouts API (Business account required)</li>
+					<li>Verify your business details and link a bank account</li>
+					<li>For sandbox testing: Add test funds to your sandbox business account</li>
+				</ul>
+
+				<p><strong>2. Add PayPal Connect Widget to Vendor Dashboard</strong></p>
+				<ul style="list-style: disc; padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Go to: <strong>Elementor</strong> → Edit your vendor dashboard template</li>
+					<li>Search for: <strong>"PayPal Connect"</strong> widget</li>
+					<li>Drag the widget to your vendor dashboard page</li>
+					<li>Vendors will use this widget to enter their PayPal email address</li>
+					<li>Alternative: Vendors can also set their email via WordPress user profile</li>
+				</ul>
+
+				<p><strong>3. Shortcode (Alternative to Widget)</strong></p>
+				<ul style="list-style: disc; padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Use shortcode: <code>[paypal_vendor_email]</code></li>
+					<li>Add to any page where vendors can manage their settings</li>
+				</ul>
+
+				<p style="margin-top: 20px;"><strong>How Marketplace Payouts Work</strong></p>
+				<ol style="padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Customer purchases from vendor's listing</li>
+					<li>PayPal captures full payment to platform account</li>
+					<li>Platform fee is calculated (<?php echo \Voxel\get('payments.paypal.marketplace.fee_value', '10'); ?><?php echo \Voxel\get('payments.paypal.marketplace.fee_type', 'percentage') === 'percentage' ? '%' : ' (fixed)'; ?>)</li>
+					<li>Vendor earnings = Order total - Platform fee</li>
+					<li>System automatically creates PayPal Payout to vendor's email</li>
+					<li>Vendor receives payment directly to their PayPal account</li>
+				</ol>
+
+				<p><strong>Important Requirements</strong></p>
+				<ul style="list-style: disc; padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Vendors must set their PayPal email using the widget or user profile</li>
+					<li>If no PayPal email is set, their WordPress account email will be used</li>
+					<li>Minimum payout amount: $1.00 USD (or equivalent)</li>
+					<li>PayPal account must have sufficient funds for payouts</li>
+					<li>Product must be a marketplace listing (not "Paid Listing" type)</li>
+					<li>Vendor must be different from customer (can't buy own products)</li>
+				</ul>
+
+				<p><strong>Testing Checklist</strong></p>
+				<ol style="padding-left: 20px; margin: 5px 0 15px 0;">
+					<li>Marketplace mode enabled (above)</li>
+					<li>Platform fee configured</li>
+					<li>Automatic payouts enabled (or manual if preferred)</li>
+					<li>PayPal Connect widget added to vendor dashboard</li>
+					<li>Vendor has set their PayPal email via widget</li>
+					<li>Webhooks configured (see below)</li>
+					<li>Make test purchase as different user</li>
+					<li>Check logs: <code>wp-content/debug.log</code></li>
+					<li>Verify payout in PayPal dashboard: Activity → Payouts</li>
+				</ol>
+
+				<p style="margin-top: 20px;">
+					<strong><?php _e( 'Need Help?', 'voxel-paypal-gateway' ); ?></strong><br>
+					<?php _e( 'Check the documentation files in the plugin folder:', 'voxel-paypal-gateway' ); ?>
+					<code>MARKETPLACE-PAYOUTS-COMPLETE.md</code>
+				</p>
+			</div>
+		</div>
+	</div>
+</template>
+
 <!-- Required Webhook Events -->
 <div class="ts-group">
 	<div class="ts-group-head">
