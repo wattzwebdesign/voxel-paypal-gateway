@@ -8,7 +8,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 
 <div class="ts-group">
 	<div class="ts-group-head">
-		<h3><?php _e( 'General', 'voxel-paypal-gateway' ); ?></h3>
+		<h3><?php _e( 'General', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
 		<?php \Voxel\Utils\Form_Models\Select_Model::render( [
@@ -35,7 +35,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <template v-if="settings.mode === 'sandbox'">
 	<div class="ts-group">
 		<div class="ts-group-head">
-			<h3><?php _e( 'Sandbox Credentials', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Sandbox Credentials', 'voxel-payment-gateways' ); ?></h3>
 		</div>
 		<div class="x-row">
 			<?php \Voxel\Utils\Form_Models\Text_Model::render( [
@@ -57,14 +57,14 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 	<!-- Sandbox Webhook -->
 	<div class="ts-group">
 		<div class="ts-group-head">
-			<h3><?php _e( 'Sandbox Webhook', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Sandbox Webhook', 'voxel-payment-gateways' ); ?></h3>
 		</div>
 		<div class="x-row">
 			<div class="ts-form-group x-col-12">
-				<label><?php _e( 'Webhook URL', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Webhook URL', 'voxel-payment-gateways' ); ?></label>
 				<input type="text" readonly value="<?= esc_attr( $webhook_url ) ?>" class="autofocus">
 				<p class="ts-description">
-					<?php _e( 'Add this URL in PayPal Developer Dashboard → Webhooks', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'Add this URL in PayPal Developer Dashboard → Webhooks', 'voxel-payment-gateways' ); ?>
 				</p>
 			</div>
 
@@ -89,7 +89,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <template v-else>
 	<div class="ts-group">
 		<div class="ts-group-head">
-			<h3><?php _e( 'Live Credentials', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Live Credentials', 'voxel-payment-gateways' ); ?></h3>
 		</div>
 		<div class="x-row">
 			<?php \Voxel\Utils\Form_Models\Text_Model::render( [
@@ -111,14 +111,14 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 	<!-- Live Webhook -->
 	<div class="ts-group">
 		<div class="ts-group-head">
-			<h3><?php _e( 'Live Webhook', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Live Webhook', 'voxel-payment-gateways' ); ?></h3>
 		</div>
 		<div class="x-row">
 			<div class="ts-form-group x-col-12">
-				<label><?php _e( 'Webhook URL', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Webhook URL', 'voxel-payment-gateways' ); ?></label>
 				<input type="text" readonly value="<?= esc_attr( $webhook_url ) ?>" class="autofocus">
 				<p class="ts-description">
-					<?php _e( 'Add this URL in PayPal Business Dashboard → Webhooks', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'Add this URL in PayPal Business Dashboard → Webhooks', 'voxel-payment-gateways' ); ?>
 				</p>
 			</div>
 
@@ -142,7 +142,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <!-- Payment Settings -->
 <div class="ts-group">
 	<div class="ts-group-head">
-		<h3><?php _e( 'Payment Settings', 'voxel-paypal-gateway' ); ?></h3>
+		<h3><?php _e( 'Payment Settings', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
 		<?php \Voxel\Utils\Form_Models\Select_Model::render( [
@@ -180,7 +180,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <!-- Marketplace Settings -->
 <div class="ts-group">
 	<div class="ts-group-head">
-		<h3><?php _e( 'Marketplace Settings', 'voxel-paypal-gateway' ); ?></h3>
+		<h3><?php _e( 'Marketplace Settings', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
 		<?php \Voxel\Utils\Form_Models\Select_Model::render( [
@@ -249,11 +249,11 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <template v-if="settings.marketplace.enabled == '1' || settings.marketplace.enabled === true || settings.marketplace.enabled === 1">
 	<div class="ts-group">
 		<div class="ts-group-head">
-			<h3><?php _e( 'Marketplace Setup Guide', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Marketplace Setup Guide', 'voxel-payment-gateways' ); ?></h3>
 		</div>
 		<div class="x-row">
 			<div class="ts-form-group x-col-12">
-				<p><?php _e( 'Complete these steps to enable vendor payouts:', 'voxel-paypal-gateway' ); ?></p>
+				<p><?php _e( 'Complete these steps to enable vendor payouts:', 'voxel-payment-gateways' ); ?></p>
 
 				<p style="margin-top: 20px;"><strong>1. Enable PayPal Payouts API Access</strong></p>
 				<ul style="list-style: disc; padding-left: 20px; margin: 5px 0 15px 0;">
@@ -312,8 +312,8 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 				</ol>
 
 				<p style="margin-top: 20px;">
-					<strong><?php _e( 'Need Help?', 'voxel-paypal-gateway' ); ?></strong><br>
-					<?php _e( 'Check the documentation files in the plugin folder:', 'voxel-paypal-gateway' ); ?>
+					<strong><?php _e( 'Need Help?', 'voxel-payment-gateways' ); ?></strong><br>
+					<?php _e( 'Check the documentation files in the plugin folder:', 'voxel-payment-gateways' ); ?>
 					<code>MARKETPLACE-PAYOUTS-COMPLETE.md</code>
 				</p>
 			</div>
@@ -324,13 +324,13 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 <!-- Required Webhook Events -->
 <div class="ts-group">
 	<div class="ts-group-head">
-		<h3><?php _e( 'Required Webhook Events', 'voxel-paypal-gateway' ); ?></h3>
+		<h3><?php _e( 'Required Webhook Events', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
 		<div class="ts-form-group x-col-12">
-			<p><?php _e( 'Configure these events in your PayPal webhook:', 'voxel-paypal-gateway' ); ?></p>
+			<p><?php _e( 'Configure these events in your PayPal webhook:', 'voxel-payment-gateways' ); ?></p>
 
-			<p style="margin-top: 15px;"><strong><?php _e( 'One-Time Payments:', 'voxel-paypal-gateway' ); ?></strong></p>
+			<p style="margin-top: 15px;"><strong><?php _e( 'One-Time Payments:', 'voxel-payment-gateways' ); ?></strong></p>
 			<ul style="list-style: disc; padding-left: 20px; margin-top: 5px;">
 				<li><code>PAYMENT.CAPTURE.COMPLETED</code></li>
 				<li><code>PAYMENT.CAPTURE.DENIED</code></li>
@@ -341,7 +341,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 				<li><code>CHECKOUT.ORDER.APPROVED</code></li>
 			</ul>
 
-			<p style="margin-top: 15px;"><strong><?php _e( 'Subscriptions:', 'voxel-paypal-gateway' ); ?></strong></p>
+			<p style="margin-top: 15px;"><strong><?php _e( 'Subscriptions:', 'voxel-payment-gateways' ); ?></strong></p>
 			<ul style="list-style: disc; padding-left: 20px; margin-top: 5px;">
 				<li><code>BILLING.SUBSCRIPTION.ACTIVATED</code></li>
 				<li><code>BILLING.SUBSCRIPTION.CANCELLED</code></li>
@@ -351,7 +351,7 @@ $webhook_url = home_url( '/?vx=1&action=paypal.webhooks' );
 				<li><code>BILLING.SUBSCRIPTION.PAYMENT.FAILED</code></li>
 			</ul>
 
-			<p style="margin-top: 15px;"><strong><?php _e( 'Marketplace Payouts (if enabled):', 'voxel-paypal-gateway' ); ?></strong></p>
+			<p style="margin-top: 15px;"><strong><?php _e( 'Marketplace Payouts (if enabled):', 'voxel-payment-gateways' ); ?></strong></p>
 			<ul style="list-style: disc; padding-left: 20px; margin-top: 5px;">
 				<li><code>PAYMENT.PAYOUTSBATCH.SUCCESS</code></li>
 				<li><code>PAYMENT.PAYOUTSBATCH.DENIED</code></li>

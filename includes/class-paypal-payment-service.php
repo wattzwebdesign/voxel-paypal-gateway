@@ -70,13 +70,13 @@ class PayPal_Payment_Service extends \Voxel\Product_Types\Payment_Services\Base_
 
 	public function get_settings_component(): ?array {
 		ob_start();
-		require VOXEL_PAYPAL_PATH . 'templates/paypal-settings.php';
+		require VOXEL_GATEWAYS_PATH . 'templates/paypal-settings.php';
 		$template = ob_get_clean();
 
-		$src = plugin_dir_url( VOXEL_PAYPAL_FILE ) . 'assets/paypal-settings.esm.js';
+		$src = plugin_dir_url( VOXEL_GATEWAYS_FILE ) . 'assets/paypal-settings.esm.js';
 
 		return [
-			'src' => add_query_arg( 'v', VOXEL_PAYPAL_VERSION, $src ),
+			'src' => add_query_arg( 'v', VOXEL_GATEWAYS_VERSION, $src ),
 			'template' => $template,
 			'data' => [],
 		];

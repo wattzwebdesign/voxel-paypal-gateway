@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: Voxel PayPal Gateway
- * Plugin URI: https://your-site.com/voxel-paypal-gateway
- * Description: Seamless PayPal payment gateway integration for Voxel theme. Supports PayPal Checkout, subscriptions, and marketplace payments.
- * Version: 1.0.0
+ * Plugin Name: Voxel Payment Gateways
+ * Plugin URI: https://codewattz.com/voxel-payment-gateways/
+ * Description: Payment gateway integrations for Voxel theme. Supports PayPal Checkout, subscriptions, and marketplace payments.
+ * Version: 2.0.0
  * Author: Code Wattz
  * Author URI: https://codewattz.com
- * Text Domain: voxel-paypal-gateway
+ * Text Domain: voxel-payment-gateways
  * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 8.1
@@ -21,10 +21,10 @@ if ( ! defined('ABSPATH') ) {
 }
 
 // Plugin constants
-define( 'VOXEL_PAYPAL_VERSION', '1.0.0' );
-define( 'VOXEL_PAYPAL_FILE', __FILE__ );
-define( 'VOXEL_PAYPAL_PATH', plugin_dir_path( __FILE__ ) );
-define( 'VOXEL_PAYPAL_URL', plugin_dir_url( __FILE__ ) );
+define( 'VOXEL_GATEWAYS_VERSION', '2.0.0' );
+define( 'VOXEL_GATEWAYS_FILE', __FILE__ );
+define( 'VOXEL_GATEWAYS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'VOXEL_GATEWAYS_URL', plugin_dir_url( __FILE__ ) );
 
 /**
  * Initialize licensing system
@@ -32,13 +32,13 @@ define( 'VOXEL_PAYPAL_URL', plugin_dir_url( __FILE__ ) );
 function init_licensing() {
 	// Load licensing classes
 	if ( ! class_exists( '\VoxelPayPal\FluentLicensing' ) ) {
-		require_once VOXEL_PAYPAL_PATH . 'updater/FluentLicensing.php';
+		require_once VOXEL_GATEWAYS_PATH . 'updater/FluentLicensing.php';
 	}
 
 	// Register licensing
 	$licensing = new \VoxelPayPal\FluentLicensing();
 	$licensing->register( [
-		'version'  => VOXEL_PAYPAL_VERSION,
+		'version'  => VOXEL_GATEWAYS_VERSION,
 		'item_id'  => '462',
 		'basename' => plugin_basename( __FILE__ ),
 		'api_url'  => 'https://codewattz.com/',
@@ -46,20 +46,20 @@ function init_licensing() {
 
 	// Load license settings page
 	if ( ! class_exists( '\VoxelPayPal\LicenseSettings' ) ) {
-		require_once VOXEL_PAYPAL_PATH . 'updater/LicenseSettings.php';
+		require_once VOXEL_GATEWAYS_PATH . 'updater/LicenseSettings.php';
 	}
 
 	// Initialize license settings page
 	$license_settings = new \VoxelPayPal\LicenseSettings();
 	$license_settings->register( $licensing )
 		->setConfig( [
-			'menu_title'   => 'Voxel PayPal License',
-			'page_title'   => 'Voxel PayPal Gateway License',
-			'title'        => 'Voxel PayPal Gateway License',
+			'menu_title'   => 'Voxel Gateways License',
+			'page_title'   => 'Voxel Payment Gateways License',
+			'title'        => 'Voxel Payment Gateways License',
 			'license_key'  => 'License Key',
-			'purchase_url' => 'https://codewattz.com/voxel-paypal-gateway/',
+			'purchase_url' => 'https://codewattz.com/voxel-payment-gateways/',
 			'account_url'  => 'https://codewattz.com/account/',
-			'plugin_name'  => 'Voxel PayPal Gateway',
+			'plugin_name'  => 'Voxel Payment Gateways',
 		] )
 		->addPage( [
 			'type'        => 'options', // Add under Settings menu
@@ -76,8 +76,8 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\\init_licensing', 1 );
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function( $links ) {
 	$license_link = sprintf(
 		'<a href="%s">%s</a>',
-		admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' ),
-		__( 'License', 'voxel-paypal-gateway' )
+		admin_url( 'options-general.php?page=voxel-payment-gateways-manage-license' ),
+		__( 'License', 'voxel-payment-gateways' )
 	);
 
 	// Add license link at the beginning
@@ -91,23 +91,23 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function( $lin
  */
 add_action( 'admin_notices', function() {
 	// Don't show on license settings page
-	if ( isset( $_GET['page'] ) && $_GET['page'] === 'voxel-paypal-gateway-manage-license' ) {
+	if ( isset( $_GET['page'] ) && $_GET['page'] === 'voxel-payment-gateways-manage-license' ) {
 		return;
 	}
 
 	try {
 		$licensing = \VoxelPayPal\FluentLicensing::getInstance();
 		$status = $licensing->getStatus();
-		$license_url = admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' );
+		$license_url = admin_url( 'options-general.php?page=voxel-payment-gateways-manage-license' );
 
 		// License not activated
 		if ( empty( $status['status'] ) || $status['status'] === 'unregistered' ) {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-					<?php _e( 'License activation required. The plugin will not function until you activate your license.', 'voxel-paypal-gateway' ); ?>
-					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Activate License', 'voxel-paypal-gateway' ); ?></a>
+					<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+					<?php _e( 'License activation required. The plugin will not function until you activate your license.', 'voxel-payment-gateways' ); ?>
+					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Activate License', 'voxel-payment-gateways' ); ?></a>
 				</p>
 			</div>
 			<?php
@@ -119,9 +119,9 @@ add_action( 'admin_notices', function() {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-					<?php _e( 'Your license is invalid. Please check your license key or contact support.', 'voxel-paypal-gateway' ); ?>
-					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-paypal-gateway' ); ?></a>
+					<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+					<?php _e( 'Your license is invalid. Please check your license key or contact support.', 'voxel-payment-gateways' ); ?>
+					<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-payment-gateways' ); ?></a>
 				</p>
 			</div>
 			<?php
@@ -133,9 +133,9 @@ add_action( 'admin_notices', function() {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-					<?php _e( 'Your license has been disabled. Please contact support for assistance.', 'voxel-paypal-gateway' ); ?>
-					<a href="https://codewattz.com/account/" target="_blank"><?php _e( 'Contact Support', 'voxel-paypal-gateway' ); ?></a>
+					<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+					<?php _e( 'Your license has been disabled. Please contact support for assistance.', 'voxel-payment-gateways' ); ?>
+					<a href="https://codewattz.com/account/" target="_blank"><?php _e( 'Contact Support', 'voxel-payment-gateways' ); ?></a>
 				</p>
 			</div>
 			<?php
@@ -153,9 +153,9 @@ add_action( 'admin_notices', function() {
 				?>
 				<div class="notice notice-warning">
 					<p>
-						<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-						<?php printf( __( 'Your license will expire in %d days. Renew now to continue receiving updates and support.', 'voxel-paypal-gateway' ), ceil( $days_until_expiry ) ); ?>
-						<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-paypal-gateway' ); ?></a>
+						<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+						<?php printf( __( 'Your license will expire in %d days. Renew now to continue receiving updates and support.', 'voxel-payment-gateways' ), ceil( $days_until_expiry ) ); ?>
+						<a href="<?php echo esc_url( $license_url ); ?>"><?php _e( 'Manage License', 'voxel-payment-gateways' ); ?></a>
 					</p>
 				</div>
 				<?php
@@ -166,9 +166,9 @@ add_action( 'admin_notices', function() {
 				?>
 				<div class="notice notice-error">
 					<p>
-						<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-						<?php _e( 'Your license has expired. Please renew to continue using the plugin.', 'voxel-paypal-gateway' ); ?>
-						<a href="https://codewattz.com/voxel-paypal-gateway/" target="_blank"><?php _e( 'Renew License', 'voxel-paypal-gateway' ); ?></a>
+						<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+						<?php _e( 'Your license has expired. Please renew to continue using the plugin.', 'voxel-payment-gateways' ); ?>
+						<a href="https://codewattz.com/voxel-payment-gateways/" target="_blank"><?php _e( 'Renew License', 'voxel-payment-gateways' ); ?></a>
 					</p>
 				</div>
 				<?php
@@ -179,8 +179,8 @@ add_action( 'admin_notices', function() {
 		?>
 		<div class="notice notice-error">
 			<p>
-				<strong><?php _e( 'Voxel PayPal Gateway:', 'voxel-paypal-gateway' ); ?></strong>
-				<?php _e( 'License system not initialized. Please deactivate and reactivate the plugin.', 'voxel-paypal-gateway' ); ?>
+				<strong><?php _e( 'Voxel Payment Gateways:', 'voxel-payment-gateways' ); ?></strong>
+				<?php _e( 'License system not initialized. Please deactivate and reactivate the plugin.', 'voxel-payment-gateways' ); ?>
 			</p>
 		</div>
 		<?php
@@ -220,8 +220,8 @@ function check_voxel_theme() {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<strong><?php _e( 'Voxel PayPal Gateway Error:', 'voxel-paypal-gateway' ); ?></strong>
-					<?php _e( 'This plugin requires the Voxel theme to be active.', 'voxel-paypal-gateway' ); ?>
+					<strong><?php _e( 'Voxel Payment Gateways Error:', 'voxel-payment-gateways' ); ?></strong>
+					<?php _e( 'This plugin requires the Voxel theme to be active.', 'voxel-payment-gateways' ); ?>
 				</p>
 			</div>
 			<?php
@@ -246,28 +246,34 @@ function init_plugin() {
 	}
 
 	// Load composer autoloader if exists (for PayPal SDK)
-	if ( file_exists( VOXEL_PAYPAL_PATH . 'vendor/autoload.php' ) ) {
-		require_once VOXEL_PAYPAL_PATH . 'vendor/autoload.php';
+	if ( file_exists( VOXEL_GATEWAYS_PATH . 'vendor/autoload.php' ) ) {
+		require_once VOXEL_GATEWAYS_PATH . 'vendor/autoload.php';
 	}
 
-	// Load core files
-	require_once VOXEL_PAYPAL_PATH . 'includes/class-paypal-client.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/class-paypal-connect-client.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/class-paypal-payment-service.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/payment-methods/class-paypal-payment.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/payment-methods/class-paypal-subscription.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/payment-methods/class-paypal-transfer.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-paypal-controller.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-paypal-connect-controller.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-frontend-connect-controller.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-frontend-payments-controller.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-frontend-subscriptions-controller.php';
-	require_once VOXEL_PAYPAL_PATH . 'includes/controllers/class-frontend-webhooks-controller.php';
+	// Load PayPal gateway files
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paypal-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paypal-connect-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paypal-payment-service.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-paypal-payment.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-paypal-subscription.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-paypal-transfer.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paypal-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paypal-connect-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-frontend-connect-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-frontend-payments-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-frontend-subscriptions-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-frontend-webhooks-controller.php';
+
+	// Load Offline gateway files
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-offline-payment-service.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-offline-payment.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-offline-controller.php';
 
 	// Initialize controllers
 	new Controllers\PayPal_Controller();
 	new Controllers\PayPal_Connect_Controller();
 	new Controllers\Frontend_Connect_Controller();
+	new Controllers\Offline_Controller();
 }
 
 // Initialize early but after Voxel
@@ -289,6 +295,23 @@ add_filter( 'voxel/product-types/payment-services', function( $payment_services 
 	$payment_services['paypal'] = new \VoxelPayPal\PayPal_Payment_Service();
 	return $payment_services;
 }, 100, 1 );
+
+/**
+ * Register Offline payment service directly with lower priority to appear after other gateways
+ */
+add_filter( 'voxel/product-types/payment-services', function( $payment_services ) {
+	// Check license - don't register service if invalid
+	if ( ! is_license_valid() ) {
+		return $payment_services;
+	}
+
+	if ( ! class_exists( '\VoxelPayPal\Offline_Payment_Service' ) ) {
+		return $payment_services;
+	}
+
+	$payment_services['offline'] = new \VoxelPayPal\Offline_Payment_Service();
+	return $payment_services;
+}, 101, 1 );
 
 /**
  * Inject PayPal icon and styles into payments screen
@@ -327,6 +350,33 @@ add_action( 'admin_head', function() {
 		.vx-panel.provider-paypal.active {
 			background: linear-gradient(45deg, rgba(0, 112, 186, .31) -20%, transparent 70%) !important;
 			border-color: rgba(0, 112, 186, .537254902) !important;
+		}
+
+		/* Offline Payment Gateway Styles */
+		.offline-panel {
+			background: #2e7d32 !important;
+			width: 50px;
+			height: 50px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+		.offline-panel svg {
+			width: 28px !important;
+			height: 28px !important;
+		}
+		.offline-panel svg path {
+			fill: #fff !important;
+		}
+		.vx-panel:not(.active).provider-offline .offline-panel {
+			filter: grayscale(1) !important;
+			opacity: 0.6 !important;
+		}
+		.vx-panel.provider-offline.active {
+			background: linear-gradient(45deg, rgba(46, 125, 50, .31) -20%, transparent 70%) !important;
+			border-color: rgba(46, 125, 50, .54) !important;
 		}
 	</style>
 	<?php
@@ -368,11 +418,41 @@ add_action( 'admin_footer', function() {
 			return success;
 		}
 
+		function addOfflineIcon() {
+			const offlinePanels = document.querySelectorAll('.vx-panel.provider-offline');
+
+			if (!offlinePanels.length) {
+				return false;
+			}
+
+			var success = false;
+			offlinePanels.forEach(function(panel) {
+				if (panel.querySelector('.panel-image')) {
+					success = true;
+					return;
+				}
+
+				const iconDiv = document.createElement('div');
+				iconDiv.className = 'panel-image offline-panel';
+				iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469.341 469.341"><g><g><g><path d="M437.337,384.007H362.67c-47.052,0-85.333-38.281-85.333-85.333c0-47.052,38.281-85.333,85.333-85.333h74.667c5.896,0,10.667-4.771,10.667-10.667v-32c0-22.368-17.35-40.559-39.271-42.323l-61.26-107c-5.677-9.896-14.844-16.969-25.813-19.906c-10.917-2.917-22.333-1.385-32.104,4.302L79.553,128.007H42.67c-23.531,0-42.667,19.135-42.667,42.667v256c0,23.531,19.135,42.667,42.667,42.667h362.667c23.531,0,42.667-19.135,42.667-42.667v-32C448.004,388.778,443.233,384.007,437.337,384.007z M360.702,87.411l23.242,40.596h-92.971L360.702,87.411z M121.953,128.007L300.295,24.184c4.823-2.823,10.458-3.573,15.844-2.135c5.448,1.458,9.99,4.979,12.813,9.906l0.022,0.039l-164.91,96.013H121.953z"/><path d="M437.337,234.674H362.67c-35.292,0-64,28.708-64,64c0,35.292,28.708,64,64,64h74.667c17.646,0,32-14.354,32-32v-64C469.337,249.028,454.983,234.674,437.337,234.674z M362.67,320.007c-11.76,0-21.333-9.573-21.333-21.333c0-11.76,9.573-21.333,21.333-21.333c11.76,0,21.333,9.573,21.333,21.333C384.004,310.434,374.431,320.007,362.67,320.007z"/></g></g></g></svg>';
+
+				const panelInfo = panel.querySelector('.panel-info');
+				if (panelInfo) {
+					panel.insertBefore(iconDiv, panelInfo);
+					success = true;
+				}
+			});
+
+			return success;
+		}
+
 		var attempts = 0;
 		var maxAttempts = 100;
 		var pollInterval = setInterval(function() {
 			attempts++;
-			if (addPayPalIcon() || attempts >= maxAttempts) {
+			var paypalDone = addPayPalIcon();
+			var offlineDone = addOfflineIcon();
+			if ((paypalDone && offlineDone) || attempts >= maxAttempts) {
 				clearInterval(pollInterval);
 			}
 		}, 100);
@@ -387,8 +467,8 @@ add_action( 'admin_footer', function() {
 add_action( 'init', function() {
 	register_post_type( 'voxel_vendor_order', [
 		'labels' => [
-			'name' => __( 'Vendor Orders', 'voxel-paypal-gateway' ),
-			'singular_name' => __( 'Vendor Order', 'voxel-paypal-gateway' ),
+			'name' => __( 'Vendor Orders', 'voxel-payment-gateways' ),
+			'singular_name' => __( 'Vendor Order', 'voxel-payment-gateways' ),
 		],
 		'public' => false,
 		'show_ui' => true,
@@ -432,7 +512,7 @@ add_action( 'voxel/paypal/process-delayed-payout', function( $order_id ) {
  * Register Elementor widget
  */
 add_action( 'elementor/widgets/register', function( $widgets_manager ) {
-	require_once VOXEL_PAYPAL_PATH . 'includes/widgets/class-paypal-connect-widget.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/widgets/class-paypal-connect-widget.php';
 	$widgets_manager->register( new \VoxelPayPal\Widgets\PayPal_Connect_Widget() );
 } );
 
@@ -443,7 +523,7 @@ add_action( 'elementor/elements/categories_registered', function( $elements_mana
 	$elements_manager->add_category(
 		'voxel',
 		[
-			'title' => __( 'Voxel', 'voxel-paypal-gateway' ),
+			'title' => __( 'Voxel', 'voxel-payment-gateways' ),
 			'icon' => 'fa fa-plug',
 		]
 	);
@@ -456,7 +536,7 @@ add_shortcode( 'paypal_vendor_email', function( $atts ) {
 	$user_id = get_current_user_id();
 
 	if ( ! $user_id ) {
-		return '<p>' . __( 'Please log in to manage your PayPal settings.', 'voxel-paypal-gateway' ) . '</p>';
+		return '<p>' . __( 'Please log in to manage your PayPal settings.', 'voxel-payment-gateways' ) . '</p>';
 	}
 
 	// Check if marketplace is enabled
@@ -472,13 +552,13 @@ add_shortcode( 'paypal_vendor_email', function( $atts ) {
 	ob_start();
 	?>
 	<div class="paypal-vendor-settings-form">
-		<h3><?php _e( 'PayPal Payout Settings', 'voxel-paypal-gateway' ); ?></h3>
-		<p><?php _e( 'Set your PayPal email to receive payments from your sales.', 'voxel-paypal-gateway' ); ?></p>
+		<h3><?php _e( 'PayPal Payout Settings', 'voxel-payment-gateways' ); ?></h3>
+		<p><?php _e( 'Set your PayPal email to receive payments from your sales.', 'voxel-payment-gateways' ); ?></p>
 
 		<form id="paypal-vendor-email-form" method="post">
 			<div class="form-group">
 				<label for="paypal_vendor_email">
-					<?php _e( 'PayPal Email', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'PayPal Email', 'voxel-payment-gateways' ); ?>
 				</label>
 				<input
 					type="email"
@@ -489,12 +569,12 @@ add_shortcode( 'paypal_vendor_email', function( $atts ) {
 					required
 				/>
 				<small>
-					<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-payment-gateways' ); ?>
 				</small>
 			</div>
 
 			<button type="submit" class="btn btn-primary">
-				<?php _e( 'Save PayPal Email', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Save PayPal Email', 'voxel-payment-gateways' ); ?>
 			</button>
 
 			<div id="paypal-vendor-message" style="display:none; margin-top: 10px;"></div>
@@ -525,16 +605,16 @@ add_shortcode( 'paypal_vendor_email', function( $atts ) {
 						if (data.success) {
 							messageDiv.style.display = 'block';
 							messageDiv.style.color = 'green';
-							messageDiv.textContent = '<?php _e( 'PayPal email saved successfully!', 'voxel-paypal-gateway' ); ?>';
+							messageDiv.textContent = '<?php _e( 'PayPal email saved successfully!', 'voxel-payment-gateways' ); ?>';
 						} else {
 							messageDiv.style.display = 'block';
 							messageDiv.style.color = 'red';
-							messageDiv.textContent = data.error || '<?php _e( 'Failed to save email.', 'voxel-paypal-gateway' ); ?>';
+							messageDiv.textContent = data.error || '<?php _e( 'Failed to save email.', 'voxel-payment-gateways' ); ?>';
 						}
 					} catch (error) {
 						messageDiv.style.display = 'block';
 						messageDiv.style.color = 'red';
-						messageDiv.textContent = '<?php _e( 'An error occurred.', 'voxel-paypal-gateway' ); ?>';
+						messageDiv.textContent = '<?php _e( 'An error occurred.', 'voxel-payment-gateways' ); ?>';
 					}
 				});
 			}
@@ -578,15 +658,15 @@ register_activation_hook( __FILE__, function() {
 	if ( ! check_voxel_theme() ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 		wp_die(
-			__( 'This plugin requires the Voxel theme to be active.', 'voxel-paypal-gateway' ),
-			__( 'Plugin Activation Error', 'voxel-paypal-gateway' ),
+			__( 'This plugin requires the Voxel theme to be active.', 'voxel-payment-gateways' ),
+			__( 'Plugin Activation Error', 'voxel-payment-gateways' ),
 			[ 'back_link' => true ]
 		);
 	}
 
 	// Set default options
-	if ( ! get_option( 'voxel_paypal_version' ) ) {
-		update_option( 'voxel_paypal_version', VOXEL_PAYPAL_VERSION );
+	if ( ! get_option( 'voxel_gateways_version' ) ) {
+		update_option( 'voxel_gateways_version', VOXEL_GATEWAYS_VERSION );
 	}
 } );
 

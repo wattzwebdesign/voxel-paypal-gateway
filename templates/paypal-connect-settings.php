@@ -8,9 +8,9 @@ if ( ! defined('ABSPATH') ) {
 ?>
 
 <div class="paypal-marketplace-settings">
-	<h2><?php _e( 'Marketplace Settings', 'voxel-paypal-gateway' ); ?></h2>
+	<h2><?php _e( 'Marketplace Settings', 'voxel-payment-gateways' ); ?></h2>
 	<p class="description">
-		<?php _e( 'Configure marketplace mode to automatically split payments between your platform and vendors.', 'voxel-paypal-gateway' ); ?>
+		<?php _e( 'Configure marketplace mode to automatically split payments between your platform and vendors.', 'voxel-payment-gateways' ); ?>
 	</p>
 
 	<div class="ts-form-group">
@@ -19,25 +19,25 @@ if ( ! defined('ABSPATH') ) {
 				type="checkbox"
 				v-model="config.marketplace.enabled"
 			/>
-			<?php _e( 'Enable marketplace mode', 'voxel-paypal-gateway' ); ?>
+			<?php _e( 'Enable marketplace mode', 'voxel-payment-gateways' ); ?>
 		</label>
 		<p class="description">
-			<?php _e( 'When enabled, payments will be split between your platform and vendors.', 'voxel-paypal-gateway' ); ?>
+			<?php _e( 'When enabled, payments will be split between your platform and vendors.', 'voxel-payment-gateways' ); ?>
 		</p>
 	</div>
 
 	<template v-if="config.marketplace.enabled">
 		<div class="ts-form-group">
-			<label><?php _e( 'Platform fee type', 'voxel-paypal-gateway' ); ?></label>
+			<label><?php _e( 'Platform fee type', 'voxel-payment-gateways' ); ?></label>
 			<select v-model="config.marketplace.fee_type" class="ts-input">
-				<option value="percentage"><?php _e( 'Percentage', 'voxel-paypal-gateway' ); ?></option>
-				<option value="fixed"><?php _e( 'Fixed amount', 'voxel-paypal-gateway' ); ?></option>
+				<option value="percentage"><?php _e( 'Percentage', 'voxel-payment-gateways' ); ?></option>
+				<option value="fixed"><?php _e( 'Fixed amount', 'voxel-payment-gateways' ); ?></option>
 			</select>
 		</div>
 
 		<div class="ts-form-group">
 			<label>
-				<?php _e( 'Fee value', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Fee value', 'voxel-payment-gateways' ); ?>
 				<span v-if="config.marketplace.fee_type === 'percentage'"> (%)</span>
 			</label>
 			<input
@@ -49,10 +49,10 @@ if ( ! defined('ABSPATH') ) {
 			/>
 			<p class="description">
 				<span v-if="config.marketplace.fee_type === 'percentage'">
-					<?php _e( 'Percentage to deduct from vendor earnings (e.g., 10 for 10%)', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'Percentage to deduct from vendor earnings (e.g., 10 for 10%)', 'voxel-payment-gateways' ); ?>
 				</span>
 				<span v-else>
-					<?php _e( 'Fixed amount to deduct from vendor earnings', 'voxel-paypal-gateway' ); ?>
+					<?php _e( 'Fixed amount to deduct from vendor earnings', 'voxel-payment-gateways' ); ?>
 				</span>
 			</p>
 		</div>
@@ -63,15 +63,15 @@ if ( ! defined('ABSPATH') ) {
 					type="checkbox"
 					v-model="config.marketplace.auto_payout"
 				/>
-				<?php _e( 'Automatic payouts', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Automatic payouts', 'voxel-payment-gateways' ); ?>
 			</label>
 			<p class="description">
-				<?php _e( 'Automatically send payouts to vendors when orders are completed.', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Automatically send payouts to vendors when orders are completed.', 'voxel-payment-gateways' ); ?>
 			</p>
 		</div>
 
 		<div class="ts-form-group" v-if="config.marketplace.auto_payout">
-			<label><?php _e( 'Payout delay (days)', 'voxel-paypal-gateway' ); ?></label>
+			<label><?php _e( 'Payout delay (days)', 'voxel-payment-gateways' ); ?></label>
 			<input
 				type="number"
 				v-model="config.marketplace.payout_delay_days"
@@ -79,36 +79,36 @@ if ( ! defined('ABSPATH') ) {
 				class="ts-input"
 			/>
 			<p class="description">
-				<?php _e( 'Number of days to wait before sending payout to vendors (0 for immediate).', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Number of days to wait before sending payout to vendors (0 for immediate).', 'voxel-payment-gateways' ); ?>
 			</p>
 		</div>
 
 		<div class="ts-form-group">
-			<label><?php _e( 'Shipping responsibility', 'voxel-paypal-gateway' ); ?></label>
+			<label><?php _e( 'Shipping responsibility', 'voxel-payment-gateways' ); ?></label>
 			<select v-model="config.marketplace.shipping_responsibility" class="ts-input">
-				<option value="vendor"><?php _e( 'Vendor handles shipping', 'voxel-paypal-gateway' ); ?></option>
-				<option value="platform"><?php _e( 'Platform handles shipping', 'voxel-paypal-gateway' ); ?></option>
+				<option value="vendor"><?php _e( 'Vendor handles shipping', 'voxel-payment-gateways' ); ?></option>
+				<option value="platform"><?php _e( 'Platform handles shipping', 'voxel-payment-gateways' ); ?></option>
 			</select>
 		</div>
 
 		<div class="payout-logs">
-			<h3><?php _e( 'Recent Payouts', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Recent Payouts', 'voxel-payment-gateways' ); ?></h3>
 			<button
 				@click="loadPayoutLogs"
 				type="button"
 				class="ts-button ts-outline"
 			>
-				<?php _e( 'Load payout logs', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Load payout logs', 'voxel-payment-gateways' ); ?>
 			</button>
 
 			<div v-if="payoutLogs.length" class="payout-log-list">
 				<table class="wp-list-table widefat">
 					<thead>
 						<tr>
-							<th><?php _e( 'Timestamp', 'voxel-paypal-gateway' ); ?></th>
-							<th><?php _e( 'Batch ID', 'voxel-paypal-gateway' ); ?></th>
-							<th><?php _e( 'Status', 'voxel-paypal-gateway' ); ?></th>
-							<th><?php _e( 'Items', 'voxel-paypal-gateway' ); ?></th>
+							<th><?php _e( 'Timestamp', 'voxel-payment-gateways' ); ?></th>
+							<th><?php _e( 'Batch ID', 'voxel-payment-gateways' ); ?></th>
+							<th><?php _e( 'Status', 'voxel-payment-gateways' ); ?></th>
+							<th><?php _e( 'Items', 'voxel-payment-gateways' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -124,13 +124,13 @@ if ( ! defined('ABSPATH') ) {
 		</div>
 
 		<div class="manual-payout">
-			<h3><?php _e( 'Manual Payout', 'voxel-paypal-gateway' ); ?></h3>
+			<h3><?php _e( 'Manual Payout', 'voxel-payment-gateways' ); ?></h3>
 			<p class="description">
-				<?php _e( 'Create a manual payout to a vendor.', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Create a manual payout to a vendor.', 'voxel-payment-gateways' ); ?>
 			</p>
 
 			<div class="ts-form-group">
-				<label><?php _e( 'Vendor ID', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Vendor ID', 'voxel-payment-gateways' ); ?></label>
 				<input
 					type="number"
 					v-model="manualPayout.vendor_id"
@@ -139,7 +139,7 @@ if ( ! defined('ABSPATH') ) {
 			</div>
 
 			<div class="ts-form-group">
-				<label><?php _e( 'Amount', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Amount', 'voxel-payment-gateways' ); ?></label>
 				<input
 					type="number"
 					v-model="manualPayout.amount"
@@ -150,7 +150,7 @@ if ( ! defined('ABSPATH') ) {
 			</div>
 
 			<div class="ts-form-group">
-				<label><?php _e( 'Currency', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Currency', 'voxel-payment-gateways' ); ?></label>
 				<input
 					type="text"
 					v-model="manualPayout.currency"
@@ -160,7 +160,7 @@ if ( ! defined('ABSPATH') ) {
 			</div>
 
 			<div class="ts-form-group">
-				<label><?php _e( 'Note', 'voxel-paypal-gateway' ); ?></label>
+				<label><?php _e( 'Note', 'voxel-payment-gateways' ); ?></label>
 				<textarea
 					v-model="manualPayout.note"
 					class="ts-input"
@@ -173,7 +173,7 @@ if ( ! defined('ABSPATH') ) {
 				type="button"
 				class="ts-button"
 			>
-				<?php _e( 'Create payout', 'voxel-paypal-gateway' ); ?>
+				<?php _e( 'Create payout', 'voxel-payment-gateways' ); ?>
 			</button>
 		</div>
 	</template>

@@ -1,18 +1,28 @@
-# Voxel PayPal Gateway
+# Voxel Payment Gateways
 
-A seamless PayPal payment gateway integration for the Voxel WordPress theme.
+Payment gateway integrations for the Voxel WordPress theme.
 
 ## Features
 
+### PayPal Gateway
 - ✅ **PayPal Checkout Integration** - Accept payments via PayPal's secure checkout
 - ✅ **Automatic & Manual Capture** - Choose between immediate payment capture or vendor approval
 - ✅ **Webhook Support** - Real-time payment status updates
 - ✅ **Sandbox & Live Mode** - Test in sandbox before going live
 - ✅ **Multi-Currency Support** - Support for 25+ currencies
+- ✅ **Order Sync** - Sync order status with PayPal
+
+### Offline Payment Gateway
+- ✅ **Cash on Delivery** - Accept payment upon delivery
+- ✅ **Bank Transfer** - Accept direct bank transfers
+- ✅ **Pay at Pickup** - In-store payment option
+- ✅ **Custom Instructions** - Configurable payment instructions for customers
+- ✅ **Vendor Control** - Vendors can mark orders as paid or cancel them
+
+### General
 - ✅ **Seamless Voxel Integration** - Works with Voxel's order system, cart, and product types
 - ✅ **Vendor Actions** - Approve/decline orders from vendor dashboard
 - ✅ **Customer Actions** - Cancel pending orders
-- ✅ **Order Sync** - Sync order status with PayPal
 
 ## Requirements
 
@@ -24,7 +34,7 @@ A seamless PayPal payment gateway integration for the Voxel WordPress theme.
 ## Installation
 
 1. **Download** the plugin files
-2. **Upload** to `/wp-content/plugins/voxel-paypal-gateway/`
+2. **Upload** to `/wp-content/plugins/voxel-payment-gateways/`
 3. **Activate** the plugin through WordPress admin
 4. Navigate to **Voxel → Orders → Payments**
 5. Select **PayPal** as your payment provider
@@ -178,6 +188,15 @@ For issues or questions:
 3. Contact support at support@your-site.com
 
 ## Changelog
+
+### 2.0.0 - 2025-12-08
+- Renamed plugin from "Voxel PayPal Gateway" to "Voxel Payment Gateways"
+- Added Offline Payment gateway (Cash on Delivery, Bank Transfer, Pay at Pickup)
+- Offline payments support pending payment and pending approval order statuses
+- Vendor can mark offline orders as paid or cancel them
+- Customer can cancel pending offline orders
+- Configurable payment instructions for offline orders
+- Updated package script to output versioned zip files to dist folder
 
 ### 1.0.0 - 2025-01-XX
 - Initial release

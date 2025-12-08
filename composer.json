@@ -1,6 +1,6 @@
 {
-    "name": "your-company/voxel-paypal-gateway",
-    "description": "PayPal payment gateway for Voxel WordPress theme",
+    "name": "your-company/voxel-payment-gateways",
+    "description": "Payment gateways for Voxel WordPress theme",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "authors": [

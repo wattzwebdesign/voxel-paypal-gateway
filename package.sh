@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # WordPress Plugin Packaging Script
-# Packages voxel-paypal-gateway plugin into a versioned ZIP file
+# Packages voxel-payment-gateways plugin into a versioned ZIP file
 # Excludes: macOS files, git files, Claude files, and all hidden files
 
 set -e
@@ -16,22 +16,26 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-echo -e "${YELLOW}=== Voxel PayPal Gateway Packaging Script ===${NC}\n"
+echo -e "${YELLOW}=== Voxel Payment Gateways Packaging Script ===${NC}\n"
 
 # Extract version from main plugin file
-VERSION=$(grep -m 1 "Version:" voxel-paypal-gateway.php | awk '{print $3}' | tr -d '\r')
+VERSION=$(grep -m 1 "Version:" voxel-payment-gateways.php | awk '{print $3}' | tr -d '\r')
 
 if [ -z "$VERSION" ]; then
-    echo -e "${RED}Error: Could not extract version from voxel-paypal-gateway.php${NC}"
+    echo -e "${RED}Error: Could not extract version from voxel-payment-gateways.php${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}Found version: ${VERSION}${NC}\n"
 
 # Define output filenames
-PLUGIN_NAME="voxel-paypal-gateway"
+PLUGIN_NAME="voxel-payment-gateways"
+DIST_DIR="dist"
 ZIP_NAME="${PLUGIN_NAME}-${VERSION}.zip"
 TEMP_DIR="temp_${PLUGIN_NAME}"
+
+# Create dist directory if it doesn't exist
+mkdir -p "$DIST_DIR"
 
 # Remove old temp directory if it exists
 if [ -d "$TEMP_DIR" ]; then
@@ -40,9 +44,9 @@ if [ -d "$TEMP_DIR" ]; then
 fi
 
 # Remove old zip if it exists
-if [ -f "$ZIP_NAME" ]; then
+if [ -f "$DIST_DIR/$ZIP_NAME" ]; then
     echo "Removing existing ${ZIP_NAME}..."
-    rm "$ZIP_NAME"
+    rm "$DIST_DIR/$ZIP_NAME"
 fi
 
 echo -e "\n${YELLOW}Creating temporary build directory...${NC}"
@@ -59,6 +63,7 @@ rsync -av \
     --exclude='temp_*' \
     --exclude='.*' \
     --exclude="${PLUGIN_NAME}-*.zip" \
+    --exclude='dist' \
     --exclude='node_modules' \
     --exclude='.npm' \
     --exclude='.env' \
@@ -70,13 +75,13 @@ rsync -av \
 
 echo -e "\n${YELLOW}Creating ZIP archive...${NC}"
 cd "$TEMP_DIR"
-zip -r "../$ZIP_NAME" "$PLUGIN_NAME" -q
+zip -r "../$DIST_DIR/$ZIP_NAME" "$PLUGIN_NAME" -q
 
 cd ..
-echo -e "${GREEN}✓ Created: ${ZIP_NAME}${NC}"
+echo -e "${GREEN}✓ Created: ${DIST_DIR}/${ZIP_NAME}${NC}"
 
 # Get file size
-SIZE=$(du -h "$ZIP_NAME" | cut -f1)
+SIZE=$(du -h "$DIST_DIR/$ZIP_NAME" | cut -f1)
 echo -e "${GREEN}✓ Size: ${SIZE}${NC}"
 
 # Clean up temporary directory
@@ -84,5 +89,5 @@ echo -e "\n${YELLOW}Cleaning up temporary files...${NC}"
 rm -rf "$TEMP_DIR"
 
 echo -e "\n${GREEN}=== Packaging complete! ===${NC}"
-echo -e "${GREEN}Package: ${ZIP_NAME}${NC}"
+echo -e "${GREEN}Package: ${DIST_DIR}/${ZIP_NAME}${NC}"
 echo -e "\nYou can now upload this file to WordPress or distribute it.\n"

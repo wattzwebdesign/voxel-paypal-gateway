@@ -17,7 +17,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 	}
 
 	public function get_title() {
-		return __( 'PayPal Connect', 'voxel-paypal-gateway' );
+		return __( 'PayPal Connect', 'voxel-payment-gateways' );
 	}
 
 	public function get_icon() {
@@ -37,7 +37,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'content_section',
 			[
-				'label' => __( 'Content', 'voxel-paypal-gateway' ),
+				'label' => __( 'Content', 'voxel-payment-gateways' ),
 				'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
 			]
 		);
@@ -45,37 +45,37 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'title',
 			[
-				'label' => __( 'Title', 'voxel-paypal-gateway' ),
+				'label' => __( 'Title', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::TEXT,
-				'default' => __( 'PayPal Payout Settings', 'voxel-paypal-gateway' ),
+				'default' => __( 'PayPal Payout Settings', 'voxel-payment-gateways' ),
 			]
 		);
 
 		$this->add_control(
 			'description',
 			[
-				'label' => __( 'Description', 'voxel-paypal-gateway' ),
+				'label' => __( 'Description', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::TEXTAREA,
-				'default' => __( 'Set your PayPal email to receive payments from your sales.', 'voxel-paypal-gateway' ),
+				'default' => __( 'Set your PayPal email to receive payments from your sales.', 'voxel-payment-gateways' ),
 			]
 		);
 
 		$this->add_control(
 			'button_text',
 			[
-				'label' => __( 'Button Text', 'voxel-paypal-gateway' ),
+				'label' => __( 'Button Text', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::TEXT,
-				'default' => __( 'Save PayPal Email', 'voxel-paypal-gateway' ),
+				'default' => __( 'Save PayPal Email', 'voxel-payment-gateways' ),
 			]
 		);
 
 		$this->add_control(
 			'show_earnings',
 			[
-				'label' => __( 'Show Earnings Summary', 'voxel-paypal-gateway' ),
+				'label' => __( 'Show Earnings Summary', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::SWITCHER,
-				'label_on' => __( 'Show', 'voxel-paypal-gateway' ),
-				'label_off' => __( 'Hide', 'voxel-paypal-gateway' ),
+				'label_on' => __( 'Show', 'voxel-payment-gateways' ),
+				'label_off' => __( 'Hide', 'voxel-payment-gateways' ),
 				'return_value' => 'yes',
 				'default' => 'no',
 			]
@@ -87,7 +87,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'style_section',
 			[
-				'label' => __( 'Style', 'voxel-paypal-gateway' ),
+				'label' => __( 'Style', 'voxel-payment-gateways' ),
 				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
 			]
 		);
@@ -95,7 +95,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'title_color',
 			[
-				'label' => __( 'Title Color', 'voxel-paypal-gateway' ),
+				'label' => __( 'Title Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'selectors' => [
 					'{{WRAPPER}} .paypal-connect-title' => 'color: {{VALUE}}',
@@ -106,7 +106,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'button_color',
 			[
-				'label' => __( 'Button Color', 'voxel-paypal-gateway' ),
+				'label' => __( 'Button Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'selectors' => [
 					'{{WRAPPER}} .paypal-connect-submit' => 'background-color: {{VALUE}}',
@@ -124,7 +124,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		// Check if user is logged in
 		if ( ! $user_id ) {
 			echo '<div class="paypal-connect-widget">';
-			echo '<p>' . __( 'Please log in to manage your PayPal settings.', 'voxel-paypal-gateway' ) . '</p>';
+			echo '<p>' . __( 'Please log in to manage your PayPal settings.', 'voxel-payment-gateways' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -135,7 +135,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 		if ( ! $marketplace_enabled ) {
 			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
 				echo '<div class="paypal-connect-widget">';
-				echo '<p style="color: #f00;">' . __( 'Marketplace mode is not enabled in PayPal settings.', 'voxel-paypal-gateway' ) . '</p>';
+				echo '<p style="color: #f00;">' . __( 'Marketplace mode is not enabled in PayPal settings.', 'voxel-payment-gateways' ) . '</p>';
 				echo '</div>';
 			}
 			return;
@@ -164,20 +164,20 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 				<div class="paypal-connect-earnings">
 					<div class="earnings-grid">
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Total Earnings', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Total Earnings', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value">$<?php echo number_format( $earnings_data['total'], 2 ); ?></span>
 						</div>
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Platform Fees', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Platform Fees', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value">$<?php echo number_format( $earnings_data['total_fees'], 2 ); ?></span>
 						</div>
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Orders', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Orders', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value"><?php echo intval( $earnings_data['order_count'] ); ?></span>
 						</div>
 						<?php if ( $earnings_data['pending_payouts'] > 0 ): ?>
 							<div class="earnings-item">
-								<span class="earnings-label"><?php _e( 'Pending Payouts', 'voxel-paypal-gateway' ); ?></span>
+								<span class="earnings-label"><?php _e( 'Pending Payouts', 'voxel-payment-gateways' ); ?></span>
 								<span class="earnings-value"><?php echo intval( $earnings_data['pending_payouts'] ); ?></span>
 							</div>
 						<?php endif; ?>
@@ -188,7 +188,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 			<form class="paypal-connect-form" data-widget-id="<?php echo esc_attr( $this->get_id() ); ?>">
 				<div class="form-group">
 					<label for="paypal_email_<?php echo esc_attr( $this->get_id() ); ?>">
-						<?php _e( 'PayPal Email', 'voxel-paypal-gateway' ); ?>
+						<?php _e( 'PayPal Email', 'voxel-payment-gateways' ); ?>
 					</label>
 					<input
 						type="email"
@@ -200,7 +200,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 						required
 					/>
 					<small class="paypal-connect-help">
-						<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-paypal-gateway' ); ?>
+						<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-payment-gateways' ); ?>
 					</small>
 				</div>
 
@@ -352,10 +352,10 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 
 						if (data.success) {
 							messageDiv.className = 'paypal-connect-message success';
-							messageDiv.textContent = '<?php _e( 'PayPal email saved successfully!', 'voxel-paypal-gateway' ); ?>';
+							messageDiv.textContent = '<?php _e( 'PayPal email saved successfully!', 'voxel-payment-gateways' ); ?>';
 						} else {
 							messageDiv.className = 'paypal-connect-message error';
-							messageDiv.textContent = data.error || '<?php _e( 'Failed to save email.', 'voxel-paypal-gateway' ); ?>';
+							messageDiv.textContent = data.error || '<?php _e( 'Failed to save email.', 'voxel-payment-gateways' ); ?>';
 						}
 
 						// Hide message after 5 seconds
@@ -367,7 +367,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 						console.error('PayPal: Error saving email:', error);
 						messageDiv.style.display = 'block';
 						messageDiv.className = 'paypal-connect-message error';
-						messageDiv.textContent = error.message || '<?php _e( 'An error occurred. Please try again.', 'voxel-paypal-gateway' ); ?>';
+						messageDiv.textContent = error.message || '<?php _e( 'An error occurred. Please try again.', 'voxel-payment-gateways' ); ?>';
 					}
 				});
 			}
@@ -462,15 +462,15 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 				<div class="paypal-connect-earnings">
 					<div class="earnings-grid">
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Total Earnings', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Total Earnings', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value">$0.00</span>
 						</div>
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Platform Fees', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Platform Fees', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value">$0.00</span>
 						</div>
 						<div class="earnings-item">
-							<span class="earnings-label"><?php _e( 'Orders', 'voxel-paypal-gateway' ); ?></span>
+							<span class="earnings-label"><?php _e( 'Orders', 'voxel-payment-gateways' ); ?></span>
 							<span class="earnings-value">0</span>
 						</div>
 					</div>
@@ -480,7 +480,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 			<form class="paypal-connect-form">
 				<div class="form-group">
 					<label for="{{ widgetId }}">
-						<?php _e( 'PayPal Email', 'voxel-paypal-gateway' ); ?>
+						<?php _e( 'PayPal Email', 'voxel-payment-gateways' ); ?>
 					</label>
 					<input
 						type="email"
@@ -491,7 +491,7 @@ class PayPal_Connect_Widget extends \Elementor\Widget_Base {
 						required
 					/>
 					<small class="paypal-connect-help">
-						<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-paypal-gateway' ); ?>
+						<?php _e( 'If not set, payments will be sent to your account email.', 'voxel-payment-gateways' ); ?>
 					</small>
 				</div>
 
