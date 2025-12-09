@@ -269,11 +269,22 @@ function init_plugin() {
 	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-offline-payment.php';
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-offline-controller.php';
 
+	// Load Square gateway files
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-square-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-square-payment-service.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-square-payment.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-square-subscription.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-square-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-square-payments-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-square-subscriptions-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-square-webhooks-controller.php';
+
 	// Initialize controllers
 	new Controllers\PayPal_Controller();
 	new Controllers\PayPal_Connect_Controller();
 	new Controllers\Frontend_Connect_Controller();
 	new Controllers\Offline_Controller();
+	new Controllers\Square_Controller();
 }
 
 // Initialize early but after Voxel
@@ -312,6 +323,23 @@ add_filter( 'voxel/product-types/payment-services', function( $payment_services 
 	$payment_services['offline'] = new \VoxelPayPal\Offline_Payment_Service();
 	return $payment_services;
 }, 101, 1 );
+
+/**
+ * Register Square payment service directly with lower priority to appear after other gateways
+ */
+add_filter( 'voxel/product-types/payment-services', function( $payment_services ) {
+	// Check license - don't register service if invalid
+	if ( ! is_license_valid() ) {
+		return $payment_services;
+	}
+
+	if ( ! class_exists( '\VoxelPayPal\Square_Payment_Service' ) ) {
+		return $payment_services;
+	}
+
+	$payment_services['square'] = new \VoxelPayPal\Square_Payment_Service();
+	return $payment_services;
+}, 102, 1 );
 
 /**
  * Inject PayPal icon and styles into payments screen
@@ -377,6 +405,34 @@ add_action( 'admin_head', function() {
 		.vx-panel.provider-offline.active {
 			background: linear-gradient(45deg, rgba(46, 125, 50, .31) -20%, transparent 70%) !important;
 			border-color: rgba(46, 125, 50, .54) !important;
+		}
+
+		/* Square Payment Gateway Styles */
+		.square-panel {
+			background: #ffffff !important;
+			width: 50px;
+			height: 50px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			border: 1px solid #e0e0e0;
+		}
+		.square-panel svg {
+			width: 32px !important;
+			height: 32px !important;
+		}
+		.square-panel svg path {
+			fill: #000 !important;
+		}
+		.vx-panel:not(.active).provider-square .square-panel {
+			filter: grayscale(1) !important;
+			opacity: 0.6 !important;
+		}
+		.vx-panel.provider-square.active {
+			background: linear-gradient(45deg, rgba(255, 255, 255, .31) -20%, transparent 70%) !important;
+			border-color: rgba(0, 0, 0, .15) !important;
 		}
 	</style>
 	<?php
@@ -446,13 +502,42 @@ add_action( 'admin_footer', function() {
 			return success;
 		}
 
+		function addSquareIcon() {
+			const squarePanels = document.querySelectorAll('.vx-panel.provider-square');
+
+			if (!squarePanels.length) {
+				return false;
+			}
+
+			var success = false;
+			squarePanels.forEach(function(panel) {
+				if (panel.querySelector('.panel-image')) {
+					success = true;
+					return;
+				}
+
+				const iconDiv = document.createElement('div');
+				iconDiv.className = 'panel-image square-panel';
+				iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 501.42 501.42"><path fill="#000" d="M501.42,83.79v333.84c0,46.27-37.5,83.79-83.79,83.79H83.79c-46.28,0-83.79-37.5-83.79-83.79V83.79C0,37.51,37.52,0,83.79,0h333.84c46.29,0,83.79,37.5,83.79,83.79h0ZM410.22,117.64c0-14.61-11.85-26.45-26.45-26.45H117.62c-14.61,0-26.45,11.84-26.45,26.45v266.19c0,14.61,11.84,26.45,26.45,26.45h266.17c14.61,0,26.45-11.85,26.45-26.45V117.64h-.02ZM182.31,197.59c0-8.43,6.79-15.26,15.17-15.26h106.4c8.39,0,15.17,6.84,15.17,15.26v106.24c0,8.43-6.75,15.26-15.17,15.26h-106.4c-8.39,0-15.17-6.84-15.17-15.26v-106.24Z"/></svg>';
+
+				const panelInfo = panel.querySelector('.panel-info');
+				if (panelInfo) {
+					panel.insertBefore(iconDiv, panelInfo);
+					success = true;
+				}
+			});
+
+			return success;
+		}
+
 		var attempts = 0;
 		var maxAttempts = 100;
 		var pollInterval = setInterval(function() {
 			attempts++;
 			var paypalDone = addPayPalIcon();
 			var offlineDone = addOfflineIcon();
-			if ((paypalDone && offlineDone) || attempts >= maxAttempts) {
+			var squareDone = addSquareIcon();
+			if ((paypalDone && offlineDone && squareDone) || attempts >= maxAttempts) {
 				clearInterval(pollInterval);
 			}
 		}, 100);
