@@ -197,6 +197,14 @@ For issues or questions:
 - Customer can cancel pending offline orders
 - Configurable payment instructions for offline orders
 - Updated package script to output versioned zip files to dist folder
+- Added Square Payment Gateway integration
+  - Support for memberships, paid listings, and products
+  - Square Checkout Links (redirect-based checkout)
+  - Payment methods: Cards, Apple Pay, Google Pay, Cash App Pay, Afterpay
+  - Subscription support for recurring payments
+  - Webhook handling for payment events
+  - Sandbox and live mode support
+  - Note: Marketplace/vendor payouts not supported (Square limitation)
 
 ### 1.0.0 - 2025-01-XX
 - Initial release
