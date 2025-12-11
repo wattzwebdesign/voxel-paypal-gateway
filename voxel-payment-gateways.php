@@ -302,6 +302,9 @@ function init_plugin() {
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-subscriptions-controller.php';
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-webhooks-controller.php';
 
+	// Load Stripe enhancements
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-stripe-controller.php';
+
 	// Initialize controllers
 	new Controllers\PayPal_Controller();
 	new Controllers\PayPal_Connect_Controller();
@@ -310,6 +313,7 @@ function init_plugin() {
 	new Controllers\Square_Controller();
 	new Controllers\MercadoPago_Controller();
 	new Controllers\Paystack_Controller();
+	new Controllers\Stripe_Controller();
 }
 
 // Initialize early but after Voxel
