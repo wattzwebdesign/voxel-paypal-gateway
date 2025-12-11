@@ -190,6 +190,15 @@ For issues or questions:
 ## Changelog
 
 ### 2.0.0 - 2025-12-11
+- Added Customer Wallet feature
+  - Users can add funds to wallet via site's configured payment gateway
+  - Pay for orders using wallet balance (pre-checkout toggle)
+  - Transaction history with deposits, purchases, refunds, adjustments
+  - Admin can enable/disable wallet for entire site
+  - Admin user profile section for viewing/adjusting user balances
+  - Wallet Elementor widget with comprehensive styling controls
+  - Dynamic tag support: @user(wallet.balance), @user(wallet.balance_formatted)
+  - Customizable labels for all widget text
 - Added Stripe enhancement: Skip checkout for zero amount orders
   - Toggle in Stripe Payments settings to bypass checkout when order total is $0
   - Orders complete immediately without redirecting to Stripe
