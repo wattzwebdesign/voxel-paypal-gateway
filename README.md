@@ -205,6 +205,16 @@ For issues or questions:
   - Webhook handling for payment events
   - Sandbox and live mode support
   - Note: Marketplace/vendor payouts not supported (Square limitation)
+- Added Mercado Pago Payment Gateway integration
+  - Checkout Pro integration (redirect-based checkout)
+  - One-time payments for products and paid listings
+  - Subscription support (preapprovals) for recurring payments
+  - Marketplace support with vendor OAuth connections
+  - Split payments with configurable platform fees (percentage or fixed)
+  - Vendor Connect widget for Elementor
+  - Webhook handling for payments, subscriptions, and marketplace events
+  - Sandbox and live mode support
+  - Supported currencies: ARS, BRL, CLP, COP, MXN, PEN, UYU
 
 ### 1.0.0 - 2025-01-XX
 - Initial release
