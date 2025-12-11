@@ -414,7 +414,7 @@ add_action( 'admin_head', function() {
 			background: #0070ba !important;
 			width: 50px;
 			height: 50px;
-			border-radius: 5px;
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -444,7 +444,7 @@ add_action( 'admin_head', function() {
 			background: #2e7d32 !important;
 			width: 50px;
 			height: 50px;
-			border-radius: 5px;
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -471,7 +471,7 @@ add_action( 'admin_head', function() {
 			background: #ffffff !important;
 			width: 50px;
 			height: 50px;
-			border-radius: 5px;
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -499,7 +499,7 @@ add_action( 'admin_head', function() {
 			background: #00bcff !important;
 			width: 50px;
 			height: 50px;
-			border-radius: 5px;
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -524,7 +524,7 @@ add_action( 'admin_head', function() {
 			background: #58c0f2 !important;
 			width: 50px;
 			height: 50px;
-			border-radius: 5px;
+			border-radius: 10px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -700,6 +700,15 @@ add_action( 'admin_footer', function() {
 			return success;
 		}
 
+		function addAllIcons() {
+			addPayPalIcon();
+			addOfflineIcon();
+			addSquareIcon();
+			addMercadoPagoIcon();
+			addPaystackIcon();
+		}
+
+		// Initial polling for icons on page load
 		var attempts = 0;
 		var maxAttempts = 100;
 		var pollInterval = setInterval(function() {
@@ -713,6 +722,24 @@ add_action( 'admin_footer', function() {
 				clearInterval(pollInterval);
 			}
 		}, 100);
+
+		// Watch for DOM changes (Vue/SPA navigation) and re-add icons when panels appear
+		var observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(mutation) {
+				if (mutation.addedNodes.length) {
+					// Check if any provider panels were added without icons
+					var panels = document.querySelectorAll('.vx-panel[class*="provider-"]:not(:has(.panel-image))');
+					if (panels.length) {
+						addAllIcons();
+					}
+				}
+			});
+		});
+
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
 	})();
 	</script>
 	<?php
