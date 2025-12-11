@@ -21,7 +21,7 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 	}
 
 	public function get_icon(): string {
-		return 'eicon-wallet';
+		return 'eicon-price-table';
 	}
 
 	public function get_categories(): array {
@@ -33,7 +33,10 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 	}
 
 	protected function register_controls(): void {
-		// Content Section
+		// ========================================
+		// CONTENT TAB
+		// ========================================
+
 		$this->start_controls_section(
 			'content_section',
 			[
@@ -109,7 +112,265 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 
 		$this->end_controls_section();
 
-		// Balance Card Style Section
+		// ========================================
+		// CONTENT TAB - Labels Section
+		// ========================================
+
+		$this->start_controls_section(
+			'labels_section',
+			[
+				'label' => __( 'Labels', 'voxel-payment-gateways' ),
+				'tab' => \Elementor\Controls_Manager::TAB_CONTENT,
+			]
+		);
+
+		$this->add_control(
+			'label_available_balance',
+			[
+				'label' => __( 'Available Balance Label', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Available Balance', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_add_funds_title',
+			[
+				'label' => __( 'Add Funds Section Title', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Add Funds', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_history_title',
+			[
+				'label' => __( 'Transaction History Title', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Transaction History', 'voxel-payment-gateways' ),
+				'condition' => [
+					'show_history' => 'yes',
+				],
+			]
+		);
+
+		$this->add_control(
+			'label_no_transactions',
+			[
+				'label' => __( 'No Transactions Text', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'No transactions yet', 'voxel-payment-gateways' ),
+				'condition' => [
+					'show_history' => 'yes',
+				],
+			]
+		);
+
+		$this->add_control(
+			'label_limits_heading',
+			[
+				'label' => __( 'Deposit Limits', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'label_min',
+			[
+				'label' => __( 'Minimum Label', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Min', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_max',
+			[
+				'label' => __( 'Maximum Label', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Max', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_tx_types_heading',
+			[
+				'label' => __( 'Transaction Type Labels', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'label_deposit',
+			[
+				'label' => __( 'Deposit', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Deposit', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_purchase',
+			[
+				'label' => __( 'Purchase', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Purchase', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_refund',
+			[
+				'label' => __( 'Refund', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Refund', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_adjustment',
+			[
+				'label' => __( 'Adjustment', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Adjustment', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_messages_heading',
+			[
+				'label' => __( 'Messages', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'label_processing',
+			[
+				'label' => __( 'Processing Text', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Processing...', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_invalid_amount',
+			[
+				'label' => __( 'Invalid Amount Error', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Please enter a valid amount', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_deposit_failed',
+			[
+				'label' => __( 'Deposit Failed Error', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'Failed to initiate deposit', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->add_control(
+			'label_error_occurred',
+			[
+				'label' => __( 'General Error', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::TEXT,
+				'default' => __( 'An error occurred', 'voxel-payment-gateways' ),
+			]
+		);
+
+		$this->end_controls_section();
+
+		// ========================================
+		// STYLE TAB - Header Section
+		// ========================================
+
+		$this->start_controls_section(
+			'header_style_section',
+			[
+				'label' => __( 'Header', 'voxel-payment-gateways' ),
+				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+			]
+		);
+
+		$this->add_control(
+			'title_color',
+			[
+				'label' => __( 'Title Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#333333',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-title' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'title_typography',
+				'label' => __( 'Title Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-title',
+			]
+		);
+
+		$this->add_responsive_control(
+			'title_margin',
+			[
+				'label' => __( 'Title Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-title' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'description_color',
+			[
+				'label' => __( 'Description Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#666666',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-description' => 'color: {{VALUE}};',
+				],
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'description_typography',
+				'label' => __( 'Description Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-description',
+			]
+		);
+
+		$this->add_responsive_control(
+			'header_margin',
+			[
+				'label' => __( 'Header Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-header' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+				'separator' => 'before',
+			]
+		);
+
+		$this->end_controls_section();
+
+		// ========================================
+		// STYLE TAB - Balance Card Section
+		// ========================================
+
 		$this->start_controls_section(
 			'balance_style_section',
 			[
@@ -119,17 +380,37 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
-			'primary_color',
+			'balance_bg_color',
 			[
 				'label' => __( 'Background Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'default' => '#4caf50',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-balance-card' => 'background: linear-gradient(135deg, {{VALUE}} 0%, {{VALUE}} 100%);',
-					'{{WRAPPER}} .wallet-preset-btn' => 'border-color: {{VALUE}}; color: {{VALUE}};',
-					'{{WRAPPER}} .wallet-preset-btn:hover, {{WRAPPER}} .wallet-preset-btn.active' => 'background: {{VALUE}};',
-					'{{WRAPPER}} .wallet-submit-btn' => 'background: {{VALUE}};',
-					'{{WRAPPER}} .wallet-amount-input:focus' => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'balance_bg_gradient',
+			[
+				'label' => __( 'Use Gradient', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::SWITCHER,
+				'default' => 'yes',
+			]
+		);
+
+		$this->add_control(
+			'balance_bg_gradient_end',
+			[
+				'label' => __( 'Gradient End Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#388e3c',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'background: linear-gradient(135deg, {{balance_bg_color.VALUE}} 0%, {{VALUE}} 100%);',
+				],
+				'condition' => [
+					'balance_bg_gradient' => 'yes',
 				],
 			]
 		);
@@ -141,139 +422,456 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'default' => '#ffffff',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-balance-card' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card *' => 'color: {{VALUE}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'balance_font_size',
+			'balance_label_heading',
 			[
-				'label' => __( 'Balance Font Size', 'voxel-payment-gateways' ),
-				'type' => \Elementor\Controls_Manager::SLIDER,
+				'label' => __( 'Balance Label', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'balance_label_typography',
+				'label' => __( 'Label Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-balance-label',
+			]
+		);
+
+		$this->add_control(
+			'balance_amount_heading',
+			[
+				'label' => __( 'Balance Amount', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'balance_amount_typography',
+				'label' => __( 'Amount Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-balance-amount',
+			]
+		);
+
+		$this->add_responsive_control(
+			'balance_card_padding',
+			[
+				'label' => __( 'Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'default' => [
+					'top' => '24',
+					'right' => '24',
+					'bottom' => '24',
+					'left' => '24',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_responsive_control(
+			'balance_card_margin',
+			[
+				'label' => __( 'Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'balance_card_border_radius',
+			[
+				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
+				'default' => [
+					'top' => '12',
+					'right' => '12',
+					'bottom' => '12',
+					'left' => '12',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'balance_card_border',
+				'label' => __( 'Border', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card',
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'balance_card_shadow',
+				'label' => __( 'Box Shadow', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-balance-card',
+			]
+		);
+
+		$this->end_controls_section();
+
+		// ========================================
+		// STYLE TAB - Add Funds Card Section
+		// ========================================
+
+		$this->start_controls_section(
+			'add_funds_style_section',
+			[
+				'label' => __( 'Add Funds Card', 'voxel-payment-gateways' ),
+				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+			]
+		);
+
+		$this->add_control(
+			'add_funds_bg_color',
+			[
+				'label' => __( 'Background Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#ffffff',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds' => 'background-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'add_funds_title_color',
+			[
+				'label' => __( 'Title Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#333333',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds h3' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'add_funds_title_typography',
+				'label' => __( 'Title Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds h3',
+			]
+		);
+
+		$this->add_responsive_control(
+			'add_funds_padding',
+			[
+				'label' => __( 'Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'default' => [
+					'top' => '24',
+					'right' => '24',
+					'bottom' => '24',
+					'left' => '24',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_responsive_control(
+			'add_funds_margin',
+			[
+				'label' => __( 'Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em', '%' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'add_funds_border_radius',
+			[
+				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
+				'default' => [
+					'top' => '12',
+					'right' => '12',
+					'bottom' => '12',
+					'left' => '12',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'add_funds_border',
+				'label' => __( 'Border', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds',
+				'fields_options' => [
+					'border' => [
+						'default' => 'solid',
+					],
+					'width' => [
+						'default' => [
+							'top' => '1',
+							'right' => '1',
+							'bottom' => '1',
+							'left' => '1',
+							'unit' => 'px',
+						],
+					],
+					'color' => [
+						'default' => '#e0e0e0',
+					],
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'add_funds_shadow',
+				'label' => __( 'Box Shadow', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-add-funds',
+			]
+		);
+
+		$this->end_controls_section();
+
+		// ========================================
+		// STYLE TAB - Preset Amount Buttons
+		// ========================================
+
+		$this->start_controls_section(
+			'preset_buttons_style_section',
+			[
+				'label' => __( 'Quick Amount Buttons', 'voxel-payment-gateways' ),
+				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+				'condition' => [
+					'show_preset_amounts' => 'yes',
+				],
+			]
+		);
+
+		$this->add_control(
+			'preset_btn_color',
+			[
+				'label' => __( 'Primary Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#4caf50',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn' => 'border-color: {{VALUE}}; color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn:hover, {{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn.active' => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'preset_btn_hover_text_color',
+			[
+				'label' => __( 'Hover/Active Text Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#ffffff',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn:hover, {{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn.active' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'preset_btn_typography',
+				'label' => __( 'Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn',
+			]
+		);
+
+		$this->add_responsive_control(
+			'preset_btn_padding',
+			[
+				'label' => __( 'Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => [ 'px', 'em' ],
+				'default' => [
+					'top' => '8',
+					'right' => '16',
+					'bottom' => '8',
+					'left' => '16',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'preset_btn_margin',
+			[
+				'label' => __( 'Button Spacing', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
 				'range' => [
 					'px' => [
-						'min' => 20,
-						'max' => 80,
+						'min' => 0,
+						'max' => 30,
 					],
-					'em' => [
+				],
+				'default' => [
+					'unit' => 'px',
+					'size' => 8,
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-amounts' => 'gap: {{SIZE}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'preset_btn_border_radius',
+			[
+				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
+				'default' => [
+					'top' => '6',
+					'right' => '6',
+					'bottom' => '6',
+					'left' => '6',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'preset_btn_border_width',
+			[
+				'label' => __( 'Border Width', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range' => [
+					'px' => [
 						'min' => 1,
 						'max' => 5,
 					],
 				],
 				'default' => [
 					'unit' => 'px',
-					'size' => 36,
+					'size' => 2,
 				],
 				'selectors' => [
-					'{{WRAPPER}} .wallet-balance-amount' => 'font-size: {{SIZE}}{{UNIT}};',
-				],
-			]
-		);
-
-		$this->add_control(
-			'balance_border_radius',
-			[
-				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
-				'type' => \Elementor\Controls_Manager::SLIDER,
-				'size_units' => [ 'px' ],
-				'range' => [
-					'px' => [
-						'min' => 0,
-						'max' => 30,
-					],
-				],
-				'default' => [
-					'unit' => 'px',
-					'size' => 12,
-				],
-				'selectors' => [
-					'{{WRAPPER}} .wallet-balance-card' => 'border-radius: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-preset-btn' => 'border-width: {{SIZE}}{{UNIT}}; border-style: solid;',
 				],
 			]
 		);
 
 		$this->end_controls_section();
 
-		// Typography Style Section
+		// ========================================
+		// STYLE TAB - Submit Button
+		// ========================================
+
 		$this->start_controls_section(
-			'typography_style_section',
+			'submit_button_style_section',
 			[
-				'label' => __( 'Typography', 'voxel-payment-gateways' ),
+				'label' => __( 'Submit Button', 'voxel-payment-gateways' ),
 				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
 			]
 		);
 
 		$this->add_control(
-			'text_color',
+			'submit_btn_bg_color',
+			[
+				'label' => __( 'Background Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#4caf50',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn' => 'background-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'submit_btn_text_color',
 			[
 				'label' => __( 'Text Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
-				'default' => '#333333',
+				'default' => '#ffffff',
 				'selectors' => [
-					'{{WRAPPER}} .voxel-wallet-widget' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn' => 'color: {{VALUE}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'title_font_size',
+			'submit_btn_hover_bg_color',
 			[
-				'label' => __( 'Title Font Size', 'voxel-payment-gateways' ),
-				'type' => \Elementor\Controls_Manager::SLIDER,
-				'size_units' => [ 'px', 'em' ],
-				'range' => [
-					'px' => [
-						'min' => 14,
-						'max' => 48,
-					],
-				],
-				'default' => [
-					'unit' => 'px',
-					'size' => 24,
-				],
+				'label' => __( 'Hover Background Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#388e3c',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-title' => 'font-size: {{SIZE}}{{UNIT}};',
-				],
-			]
-		);
-
-		$this->end_controls_section();
-
-		// Buttons Style Section
-		$this->start_controls_section(
-			'buttons_style_section',
-			[
-				'label' => __( 'Buttons', 'voxel-payment-gateways' ),
-				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
-			]
-		);
-
-		$this->add_control(
-			'button_border_radius',
-			[
-				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
-				'type' => \Elementor\Controls_Manager::SLIDER,
-				'size_units' => [ 'px' ],
-				'range' => [
-					'px' => [
-						'min' => 0,
-						'max' => 30,
-					],
-				],
-				'default' => [
-					'unit' => 'px',
-					'size' => 6,
-				],
-				'selectors' => [
-					'{{WRAPPER}} .wallet-submit-btn, {{WRAPPER}} .wallet-preset-btn' => 'border-radius: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn:hover' => 'background-color: {{VALUE}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'button_padding',
+			'submit_btn_hover_text_color',
+			[
+				'label' => __( 'Hover Text Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#ffffff',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn:hover' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'submit_btn_typography',
+				'label' => __( 'Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn',
+			]
+		);
+
+		$this->add_responsive_control(
+			'submit_btn_padding',
 			[
 				'label' => __( 'Padding', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::DIMENSIONS,
@@ -286,71 +884,189 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 					'unit' => 'px',
 				],
 				'selectors' => [
-					'{{WRAPPER}} .wallet-submit-btn' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'submit_btn_margin',
+			[
+				'label' => __( 'Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'submit_btn_border_radius',
+			[
+				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
+				'default' => [
+					'top' => '6',
+					'right' => '6',
+					'bottom' => '6',
+					'left' => '6',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'submit_btn_border',
+				'label' => __( 'Border', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn',
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'submit_btn_shadow',
+				'label' => __( 'Box Shadow', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-submit-btn',
 			]
 		);
 
 		$this->end_controls_section();
 
-		// Cards Style Section
+		// ========================================
+		// STYLE TAB - Input Field
+		// ========================================
+
 		$this->start_controls_section(
-			'cards_style_section',
+			'input_style_section',
 			[
-				'label' => __( 'Cards', 'voxel-payment-gateways' ),
+				'label' => __( 'Input Field', 'voxel-payment-gateways' ),
 				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
 			]
 		);
 
 		$this->add_control(
-			'card_background',
+			'input_bg_color',
 			[
 				'label' => __( 'Background Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'default' => '#ffffff',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-add-funds, {{WRAPPER}} .wallet-history' => 'background: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input' => 'background-color: {{VALUE}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'card_border_color',
+			'input_text_color',
 			[
-				'label' => __( 'Border Color', 'voxel-payment-gateways' ),
+				'label' => __( 'Text Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
-				'default' => '#e0e0e0',
+				'default' => '#333333',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-add-funds, {{WRAPPER}} .wallet-history' => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input' => 'color: {{VALUE}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'card_border_radius',
+			'input_placeholder_color',
+			[
+				'label' => __( 'Placeholder Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#999999',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input::placeholder' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'input_prefix_color',
+			[
+				'label' => __( 'Currency Prefix Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#666666',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-currency-prefix' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'input_focus_border_color',
+			[
+				'label' => __( 'Focus Border Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#4caf50',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input:focus' => 'border-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'input_typography',
+				'label' => __( 'Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input',
+			]
+		);
+
+		$this->add_responsive_control(
+			'input_padding',
+			[
+				'label' => __( 'Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'input_border_radius',
 			[
 				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
-				'type' => \Elementor\Controls_Manager::SLIDER,
-				'size_units' => [ 'px' ],
-				'range' => [
-					'px' => [
-						'min' => 0,
-						'max' => 30,
-					],
-				],
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
 				'default' => [
+					'top' => '6',
+					'right' => '6',
+					'bottom' => '6',
+					'left' => '6',
 					'unit' => 'px',
-					'size' => 12,
 				],
 				'selectors' => [
-					'{{WRAPPER}} .wallet-add-funds, {{WRAPPER}} .wallet-history' => 'border-radius: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'input_border',
+				'label' => __( 'Border', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-amount-input',
 			]
 		);
 
 		$this->end_controls_section();
 
-		// Transaction History Style Section
+		// ========================================
+		// STYLE TAB - Transaction History
+		// ========================================
+
 		$this->start_controls_section(
 			'history_style_section',
 			[
@@ -362,26 +1078,368 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 			]
 		);
 
+		// History Card
 		$this->add_control(
-			'credit_color',
+			'history_card_heading',
 			[
-				'label' => __( 'Credit Color (positive)', 'voxel-payment-gateways' ),
+				'label' => __( 'Card', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+			]
+		);
+
+		$this->add_control(
+			'history_bg_color',
+			[
+				'label' => __( 'Background Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
-				'default' => '#2e7d32',
+				'default' => '#ffffff',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-tx-amount.credit' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-history' => 'background-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'history_border_radius',
+			[
+				'label' => __( 'Border Radius', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', '%' ],
+				'default' => [
+					'top' => '12',
+					'right' => '12',
+					'bottom' => '12',
+					'left' => '12',
+					'unit' => 'px',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-history' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			[
+				'name' => 'history_border',
+				'label' => __( 'Border', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-history',
+				'fields_options' => [
+					'border' => [
+						'default' => 'solid',
+					],
+					'width' => [
+						'default' => [
+							'top' => '1',
+							'right' => '1',
+							'bottom' => '1',
+							'left' => '1',
+							'unit' => 'px',
+						],
+					],
+					'color' => [
+						'default' => '#e0e0e0',
+					],
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			[
+				'name' => 'history_shadow',
+				'label' => __( 'Box Shadow', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-history',
+			]
+		);
+
+		// History Title
+		$this->add_control(
+			'history_title_heading',
+			[
+				'label' => __( 'Section Title', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'history_title_color',
+			[
+				'label' => __( 'Title Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#333333',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-history > h3' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'history_title_typography',
+				'label' => __( 'Title Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-history > h3',
+			]
+		);
+
+		$this->add_responsive_control(
+			'history_title_padding',
+			[
+				'label' => __( 'Title Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-history > h3' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],
 			]
 		);
 
 		$this->add_control(
-			'debit_color',
+			'history_title_border_color',
 			[
-				'label' => __( 'Debit Color (negative)', 'voxel-payment-gateways' ),
+				'label' => __( 'Title Border Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#e0e0e0',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-history > h3' => 'border-bottom-color: {{VALUE}};',
+				],
+			]
+		);
+
+		// Transaction Row
+		$this->add_control(
+			'tx_row_heading',
+			[
+				'label' => __( 'Transaction Row', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_responsive_control(
+			'tx_row_padding',
+			[
+				'label' => __( 'Row Padding', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-transaction' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'tx_row_border_color',
+			[
+				'label' => __( 'Row Border Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#f0f0f0',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-transaction' => 'border-bottom-color: {{VALUE}};',
+				],
+			]
+		);
+
+		// Transaction Type Label
+		$this->add_control(
+			'tx_type_heading',
+			[
+				'label' => __( 'Transaction Type', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'tx_type_color',
+			[
+				'label' => __( 'Type Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#333333',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-tx-type' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'tx_type_typography',
+				'label' => __( 'Type Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-tx-type',
+			]
+		);
+
+		// Transaction Date
+		$this->add_control(
+			'tx_date_heading',
+			[
+				'label' => __( 'Transaction Date', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'tx_date_color',
+			[
+				'label' => __( 'Date Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#888888',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-tx-date' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'tx_date_typography',
+				'label' => __( 'Date Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-tx-date',
+			]
+		);
+
+		// Credit Amount
+		$this->add_control(
+			'tx_credit_heading',
+			[
+				'label' => __( 'Credit Amount (Positive)', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'tx_credit_color',
+			[
+				'label' => __( 'Credit Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#2e7d32',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-tx-amount.credit' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'tx_credit_typography',
+				'label' => __( 'Credit Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-tx-amount.credit',
+			]
+		);
+
+		// Debit Amount
+		$this->add_control(
+			'tx_debit_heading',
+			[
+				'label' => __( 'Debit Amount (Negative)', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'tx_debit_color',
+			[
+				'label' => __( 'Debit Color', 'voxel-payment-gateways' ),
 				'type' => \Elementor\Controls_Manager::COLOR,
 				'default' => '#c62828',
 				'selectors' => [
-					'{{WRAPPER}} .wallet-tx-amount.debit' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-tx-amount.debit' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'tx_debit_typography',
+				'label' => __( 'Debit Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-tx-amount.debit',
+			]
+		);
+
+		// Empty State
+		$this->add_control(
+			'tx_empty_heading',
+			[
+				'label' => __( 'Empty State', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'tx_empty_color',
+			[
+				'label' => __( 'Empty Text Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#888888',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-no-transactions' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'tx_empty_typography',
+				'label' => __( 'Empty Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-no-transactions',
+			]
+		);
+
+		$this->end_controls_section();
+
+		// ========================================
+		// STYLE TAB - Limits Text
+		// ========================================
+
+		$this->start_controls_section(
+			'limits_style_section',
+			[
+				'label' => __( 'Limits Text', 'voxel-payment-gateways' ),
+				'tab' => \Elementor\Controls_Manager::TAB_STYLE,
+			]
+		);
+
+		$this->add_control(
+			'limits_color',
+			[
+				'label' => __( 'Color', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::COLOR,
+				'default' => '#888888',
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-limits' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			[
+				'name' => 'limits_typography',
+				'label' => __( 'Typography', 'voxel-payment-gateways' ),
+				'selector' => '{{WRAPPER}} .voxel-wallet-widget .wallet-limits',
+			]
+		);
+
+		$this->add_responsive_control(
+			'limits_margin',
+			[
+				'label' => __( 'Margin', 'voxel-payment-gateways' ),
+				'type' => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => [ 'px', 'em' ],
+				'selectors' => [
+					'{{WRAPPER}} .voxel-wallet-widget .wallet-limits' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				],
 			]
 		);
@@ -422,9 +1480,6 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 			] );
 		}
 
-		$primary_color = $settings['primary_color'] ?: '#4caf50';
-		$text_color = $settings['text_color'] ?: '#333333';
-
 		// Check for deposit result message
 		$deposit_status = isset( $_GET['wallet_deposit'] ) ? sanitize_text_field( $_GET['wallet_deposit'] ) : null;
 		$deposit_message = isset( $_GET['wallet_message'] ) ? sanitize_text_field( urldecode( $_GET['wallet_message'] ) ) : null;
@@ -432,194 +1487,201 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 		?>
 		<div class="voxel-wallet-widget" id="<?php echo esc_attr( $widget_id ); ?>">
 			<style>
-				#<?php echo esc_attr( $widget_id ); ?> {
+				/* Default styles - can be overridden by Elementor controls */
+				.voxel-wallet-widget {
 					font-family: inherit;
-					color: <?php echo esc_attr( $text_color ); ?>;
+					color: #333333;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-header {
+				.voxel-wallet-widget .wallet-header {
 					margin-bottom: 24px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-title {
+				.voxel-wallet-widget .wallet-title {
 					font-size: 24px;
 					font-weight: 600;
 					margin: 0 0 8px 0;
+					color: #333333;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-description {
+				.voxel-wallet-widget .wallet-description {
 					margin: 0;
-					opacity: 0.7;
+					color: #666666;
 					font-size: 14px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-balance-card {
-					background: linear-gradient(135deg, <?php echo esc_attr( $primary_color ); ?> 0%, <?php echo esc_attr( $this->adjust_brightness( $primary_color, -20 ) ); ?> 100%);
-					color: #fff;
+				.voxel-wallet-widget .wallet-balance-card {
+					background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+					color: #ffffff;
 					padding: 24px;
 					border-radius: 12px;
 					margin-bottom: 24px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-balance-label {
+				.voxel-wallet-widget .wallet-balance-label {
 					font-size: 14px;
-					opacity: 0.9;
 					margin-bottom: 4px;
+					opacity: 0.9;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-balance-amount {
+				.voxel-wallet-widget .wallet-balance-amount {
 					font-size: 36px;
 					font-weight: 700;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-add-funds {
-					background: #fff;
+				.voxel-wallet-widget .wallet-add-funds {
+					background: #ffffff;
 					border: 1px solid #e0e0e0;
 					border-radius: 12px;
 					padding: 24px;
 					margin-bottom: 24px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-add-funds h3 {
+				.voxel-wallet-widget .wallet-add-funds h3 {
 					font-size: 18px;
 					font-weight: 600;
 					margin: 0 0 16px 0;
+					color: #333333;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-preset-amounts {
+				.voxel-wallet-widget .wallet-preset-amounts {
 					display: flex;
 					flex-wrap: wrap;
 					gap: 8px;
 					margin-bottom: 16px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-preset-btn {
+				.voxel-wallet-widget .wallet-preset-btn {
 					padding: 8px 16px;
-					border: 2px solid <?php echo esc_attr( $primary_color ); ?>;
+					border: 2px solid #4caf50;
 					background: transparent;
-					color: <?php echo esc_attr( $primary_color ); ?>;
+					color: #4caf50;
 					border-radius: 6px;
 					cursor: pointer;
 					font-weight: 500;
 					font-size: 14px;
 					transition: all 0.2s ease;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-preset-btn:hover,
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-preset-btn.active {
-					background: <?php echo esc_attr( $primary_color ); ?>;
-					color: #fff;
+				.voxel-wallet-widget .wallet-preset-btn:hover,
+				.voxel-wallet-widget .wallet-preset-btn.active {
+					background: #4caf50;
+					color: #ffffff;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-amount-input-group {
+				.voxel-wallet-widget .wallet-amount-input-group {
 					display: flex;
 					gap: 12px;
 					align-items: stretch;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-amount-wrapper {
+				.voxel-wallet-widget .wallet-amount-wrapper {
 					flex: 1;
 					position: relative;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-currency-prefix {
+				.voxel-wallet-widget .wallet-currency-prefix {
 					position: absolute;
 					left: 12px;
 					top: 50%;
 					transform: translateY(-50%);
 					font-weight: 600;
-					color: #666;
+					color: #666666;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-amount-input {
+				.voxel-wallet-widget .wallet-amount-input {
 					width: 100%;
 					padding: 12px 12px 12px 48px;
-					border: 1px solid #ddd;
+					border: 1px solid #dddddd;
 					border-radius: 6px;
 					font-size: 16px;
 					box-sizing: border-box;
+					background: #ffffff;
+					color: #333333;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-amount-input:focus {
+				.voxel-wallet-widget .wallet-amount-input:focus {
 					outline: none;
-					border-color: <?php echo esc_attr( $primary_color ); ?>;
+					border-color: #4caf50;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-submit-btn {
+				.voxel-wallet-widget .wallet-submit-btn {
 					padding: 12px 24px;
-					background: <?php echo esc_attr( $primary_color ); ?>;
-					color: #fff;
+					background: #4caf50;
+					color: #ffffff;
 					border: none;
 					border-radius: 6px;
 					cursor: pointer;
 					font-weight: 600;
 					font-size: 14px;
-					transition: opacity 0.2s ease;
+					transition: all 0.2s ease;
 					white-space: nowrap;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-submit-btn:hover {
-					opacity: 0.9;
+				.voxel-wallet-widget .wallet-submit-btn:hover {
+					background: #388e3c;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-submit-btn:disabled {
+				.voxel-wallet-widget .wallet-submit-btn:disabled {
 					opacity: 0.5;
 					cursor: not-allowed;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-message {
+				.voxel-wallet-widget .wallet-limits {
+					font-size: 12px;
+					color: #888888;
+					margin-top: 8px;
+				}
+				.voxel-wallet-widget .wallet-message {
 					padding: 12px;
 					border-radius: 6px;
 					margin-bottom: 16px;
 					font-size: 14px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-message.success {
+				.voxel-wallet-widget .wallet-message.success {
 					background: #e8f5e9;
 					color: #2e7d32;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-message.error {
+				.voxel-wallet-widget .wallet-message.error {
 					background: #ffebee;
 					color: #c62828;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-history {
-					background: #fff;
+				.voxel-wallet-widget .wallet-history {
+					background: #ffffff;
 					border: 1px solid #e0e0e0;
 					border-radius: 12px;
 					overflow: hidden;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-history h3 {
+				.voxel-wallet-widget .wallet-history > h3 {
 					font-size: 18px;
 					font-weight: 600;
 					margin: 0;
 					padding: 16px 20px;
+					color: #333333;
 					border-bottom: 1px solid #e0e0e0;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-transactions {
+				.voxel-wallet-widget .wallet-transactions {
 					max-height: 400px;
 					overflow-y: auto;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-transaction {
+				.voxel-wallet-widget .wallet-transaction {
 					display: flex;
 					justify-content: space-between;
 					align-items: center;
 					padding: 14px 20px;
 					border-bottom: 1px solid #f0f0f0;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-transaction:last-child {
+				.voxel-wallet-widget .wallet-transaction:last-child {
 					border-bottom: none;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-info {
+				.voxel-wallet-widget .wallet-tx-info {
 					display: flex;
 					flex-direction: column;
 					gap: 2px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-type {
+				.voxel-wallet-widget .wallet-tx-type {
 					font-weight: 500;
 					font-size: 14px;
+					color: #333333;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-date {
+				.voxel-wallet-widget .wallet-tx-date {
 					font-size: 12px;
-					opacity: 0.6;
+					color: #888888;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-amount {
+				.voxel-wallet-widget .wallet-tx-amount {
 					font-weight: 600;
 					font-size: 14px;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-amount.credit {
+				.voxel-wallet-widget .wallet-tx-amount.credit {
 					color: #2e7d32;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-tx-amount.debit {
+				.voxel-wallet-widget .wallet-tx-amount.debit {
 					color: #c62828;
 				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-no-transactions {
+				.voxel-wallet-widget .wallet-no-transactions {
 					padding: 24px;
 					text-align: center;
-					opacity: 0.6;
-				}
-				#<?php echo esc_attr( $widget_id ); ?> .wallet-limits {
-					font-size: 12px;
-					color: #888;
-					margin-top: 8px;
+					color: #888888;
 				}
 			</style>
 
@@ -639,14 +1701,14 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 			<?php endif; ?>
 
 			<div class="wallet-balance-card">
-				<div class="wallet-balance-label"><?php _e( 'Available Balance', 'voxel-payment-gateways' ); ?></div>
+				<div class="wallet-balance-label"><?php echo esc_html( $settings['label_available_balance'] ?: __( 'Available Balance', 'voxel-payment-gateways' ) ); ?></div>
 				<div class="wallet-balance-amount" id="<?php echo esc_attr( $widget_id ); ?>-balance">
 					<?php echo esc_html( $balance_formatted ); ?>
 				</div>
 			</div>
 
 			<div class="wallet-add-funds">
-				<h3><?php _e( 'Add Funds', 'voxel-payment-gateways' ); ?></h3>
+				<h3><?php echo esc_html( $settings['label_add_funds_title'] ?: __( 'Add Funds', 'voxel-payment-gateways' ) ); ?></h3>
 
 				<div id="<?php echo esc_attr( $widget_id ); ?>-message" class="wallet-message" style="display: none;"></div>
 
@@ -681,10 +1743,15 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 						</button>
 					</div>
 					<div class="wallet-limits">
-						<?php printf(
-							__( 'Min: %1$s | Max: %2$s', 'voxel-payment-gateways' ),
-							\VoxelPayPal\Wallet_Client::format_amount( $min_deposit, $currency ),
-							\VoxelPayPal\Wallet_Client::format_amount( $max_deposit, $currency )
+						<?php
+						$min_label = $settings['label_min'] ?: __( 'Min', 'voxel-payment-gateways' );
+						$max_label = $settings['label_max'] ?: __( 'Max', 'voxel-payment-gateways' );
+						printf(
+							'%1$s: %2$s | %3$s: %4$s',
+							esc_html( $min_label ),
+							esc_html( \VoxelPayPal\Wallet_Client::format_amount( $min_deposit, $currency ) ),
+							esc_html( $max_label ),
+							esc_html( \VoxelPayPal\Wallet_Client::format_amount( $max_deposit, $currency ) )
 						); ?>
 					</div>
 				</form>
@@ -692,11 +1759,11 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 
 			<?php if ( $settings['show_history'] === 'yes' ) : ?>
 				<div class="wallet-history">
-					<h3><?php _e( 'Transaction History', 'voxel-payment-gateways' ); ?></h3>
+					<h3><?php echo esc_html( $settings['label_history_title'] ?: __( 'Transaction History', 'voxel-payment-gateways' ) ); ?></h3>
 					<div class="wallet-transactions" id="<?php echo esc_attr( $widget_id ); ?>-transactions">
 						<?php if ( empty( $transactions ) ) : ?>
 							<div class="wallet-no-transactions">
-								<?php _e( 'No transactions yet', 'voxel-payment-gateways' ); ?>
+								<?php echo esc_html( $settings['label_no_transactions'] ?: __( 'No transactions yet', 'voxel-payment-gateways' ) ); ?>
 							</div>
 						<?php else : ?>
 							<?php foreach ( $transactions as $tx ) : ?>
@@ -705,10 +1772,10 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 										<span class="wallet-tx-type">
 											<?php
 											$type_labels = [
-												'deposit' => __( 'Deposit', 'voxel-payment-gateways' ),
-												'purchase' => __( 'Purchase', 'voxel-payment-gateways' ),
-												'refund' => __( 'Refund', 'voxel-payment-gateways' ),
-												'adjustment' => __( 'Adjustment', 'voxel-payment-gateways' ),
+												'deposit' => $settings['label_deposit'] ?: __( 'Deposit', 'voxel-payment-gateways' ),
+												'purchase' => $settings['label_purchase'] ?: __( 'Purchase', 'voxel-payment-gateways' ),
+												'refund' => $settings['label_refund'] ?: __( 'Refund', 'voxel-payment-gateways' ),
+												'adjustment' => $settings['label_adjustment'] ?: __( 'Adjustment', 'voxel-payment-gateways' ),
 											];
 											$type_label = $type_labels[ $tx['type'] ] ?? ucfirst( $tx['type'] );
 
@@ -766,12 +1833,12 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 					const amount = parseFloat(amountInput.value);
 
 					if (isNaN(amount) || amount <= 0) {
-						showMessage('<?php echo esc_js( __( 'Please enter a valid amount', 'voxel-payment-gateways' ) ); ?>', 'error');
+						showMessage('<?php echo esc_js( $settings['label_invalid_amount'] ?: __( 'Please enter a valid amount', 'voxel-payment-gateways' ) ); ?>', 'error');
 						return;
 					}
 
 					submitBtn.disabled = true;
-					submitBtn.textContent = '<?php echo esc_js( __( 'Processing...', 'voxel-payment-gateways' ) ); ?>';
+					submitBtn.textContent = '<?php echo esc_js( $settings['label_processing'] ?: __( 'Processing...', 'voxel-payment-gateways' ) ); ?>';
 					messageDiv.style.display = 'none';
 
 					try {
@@ -788,12 +1855,12 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 						if (data.success && data.redirect_url) {
 							window.location.href = data.redirect_url;
 						} else {
-							showMessage(data.message || '<?php echo esc_js( __( 'Failed to initiate deposit', 'voxel-payment-gateways' ) ); ?>', 'error');
+							showMessage(data.message || '<?php echo esc_js( $settings['label_deposit_failed'] ?: __( 'Failed to initiate deposit', 'voxel-payment-gateways' ) ); ?>', 'error');
 							submitBtn.disabled = false;
 							submitBtn.textContent = '<?php echo esc_js( $settings['button_text'] ?: __( 'Add Funds', 'voxel-payment-gateways' ) ); ?>';
 						}
 					} catch (error) {
-						showMessage('<?php echo esc_js( __( 'An error occurred', 'voxel-payment-gateways' ) ); ?>', 'error');
+						showMessage('<?php echo esc_js( $settings['label_error_occurred'] ?: __( 'An error occurred', 'voxel-payment-gateways' ) ); ?>', 'error');
 						submitBtn.disabled = false;
 						submitBtn.textContent = '<?php echo esc_js( $settings['button_text'] ?: __( 'Add Funds', 'voxel-payment-gateways' ) ); ?>';
 					}
@@ -810,71 +1877,56 @@ class Wallet_Widget extends \Elementor\Widget_Base {
 		<?php
 	}
 
-	/**
-	 * Adjust color brightness
-	 */
-	private function adjust_brightness( string $hex, int $steps ): string {
-		$hex = str_replace( '#', '', $hex );
-
-		$r = hexdec( substr( $hex, 0, 2 ) );
-		$g = hexdec( substr( $hex, 2, 2 ) );
-		$b = hexdec( substr( $hex, 4, 2 ) );
-
-		$r = max( 0, min( 255, $r + $steps ) );
-		$g = max( 0, min( 255, $g + $steps ) );
-		$b = max( 0, min( 255, $b + $steps ) );
-
-		return '#' . sprintf( '%02x%02x%02x', $r, $g, $b );
-	}
-
 	protected function content_template(): void {
 		?>
-		<#
-		var primaryColor = settings.primary_color || '#4caf50';
-		#>
 		<div class="voxel-wallet-widget">
 			<# if ( settings.title ) { #>
 				<div class="wallet-header">
-					<h2 class="wallet-title" style="font-size: 24px; font-weight: 600; margin: 0 0 8px 0;">{{{ settings.title }}}</h2>
+					<h2 class="wallet-title">{{{ settings.title }}}</h2>
 					<# if ( settings.description ) { #>
-						<p class="wallet-description" style="margin: 0; opacity: 0.7; font-size: 14px;">{{{ settings.description }}}</p>
+						<p class="wallet-description">{{{ settings.description }}}</p>
 					<# } #>
 				</div>
 			<# } #>
 
-			<div class="wallet-balance-card" style="background: linear-gradient(135deg, {{ primaryColor }} 0%, {{ primaryColor }} 100%); color: #fff; padding: 24px; border-radius: 12px; margin: 24px 0;">
-				<div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;"><?php _e( 'Available Balance', 'voxel-payment-gateways' ); ?></div>
-				<div style="font-size: 36px; font-weight: 700;">$0.00</div>
+			<div class="wallet-balance-card">
+				<div class="wallet-balance-label">{{{ settings.label_available_balance || '<?php _e( 'Available Balance', 'voxel-payment-gateways' ); ?>' }}}</div>
+				<div class="wallet-balance-amount">$0.00</div>
 			</div>
 
-			<div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-				<h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0;"><?php _e( 'Add Funds', 'voxel-payment-gateways' ); ?></h3>
+			<div class="wallet-add-funds">
+				<h3>{{{ settings.label_add_funds_title || '<?php _e( 'Add Funds', 'voxel-payment-gateways' ); ?>' }}}</h3>
 
 				<# if ( settings.show_preset_amounts === 'yes' ) { #>
-					<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
-						<button style="padding: 8px 16px; border: 2px solid {{ primaryColor }}; background: transparent; color: {{ primaryColor }}; border-radius: 6px;">$10</button>
-						<button style="padding: 8px 16px; border: 2px solid {{ primaryColor }}; background: transparent; color: {{ primaryColor }}; border-radius: 6px;">$25</button>
-						<button style="padding: 8px 16px; border: 2px solid {{ primaryColor }}; background: transparent; color: {{ primaryColor }}; border-radius: 6px;">$50</button>
-						<button style="padding: 8px 16px; border: 2px solid {{ primaryColor }}; background: transparent; color: {{ primaryColor }}; border-radius: 6px;">$100</button>
+					<div class="wallet-preset-amounts">
+						<button class="wallet-preset-btn">$10</button>
+						<button class="wallet-preset-btn">$25</button>
+						<button class="wallet-preset-btn">$50</button>
+						<button class="wallet-preset-btn">$100</button>
 					</div>
 				<# } #>
 
-				<div style="display: flex; gap: 12px;">
-					<div style="flex: 1; position: relative;">
-						<span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #666;">USD</span>
-						<input type="number" placeholder="0.00" style="width: 100%; padding: 12px 12px 12px 48px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box;" />
+				<div class="wallet-amount-input-group">
+					<div class="wallet-amount-wrapper">
+						<span class="wallet-currency-prefix">USD</span>
+						<input type="number" placeholder="0.00" class="wallet-amount-input" />
 					</div>
-					<button style="padding: 12px 24px; background: {{ primaryColor }}; color: #fff; border: none; border-radius: 6px; font-weight: 600;">
+					<button class="wallet-submit-btn">
 						{{{ settings.button_text || '<?php _e( 'Add Funds', 'voxel-payment-gateways' ); ?>' }}}
 					</button>
+				</div>
+				<div class="wallet-limits">
+					{{{ settings.label_min || '<?php _e( 'Min', 'voxel-payment-gateways' ); ?>' }}}: $1.00 | {{{ settings.label_max || '<?php _e( 'Max', 'voxel-payment-gateways' ); ?>' }}}: $10,000.00
 				</div>
 			</div>
 
 			<# if ( settings.show_history === 'yes' ) { #>
-				<div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
-					<h3 style="font-size: 18px; font-weight: 600; margin: 0; padding: 16px 20px; border-bottom: 1px solid #e0e0e0;"><?php _e( 'Transaction History', 'voxel-payment-gateways' ); ?></h3>
-					<div style="padding: 24px; text-align: center; opacity: 0.6;">
-						<?php _e( 'No transactions yet', 'voxel-payment-gateways' ); ?>
+				<div class="wallet-history">
+					<h3>{{{ settings.label_history_title || '<?php _e( 'Transaction History', 'voxel-payment-gateways' ); ?>' }}}</h3>
+					<div class="wallet-transactions">
+						<div class="wallet-no-transactions">
+							{{{ settings.label_no_transactions || '<?php _e( 'No transactions yet', 'voxel-payment-gateways' ); ?>' }}}
+						</div>
 					</div>
 				</div>
 			<# } #>
