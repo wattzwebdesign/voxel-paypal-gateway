@@ -23,7 +23,7 @@ class MercadoPago_Connect_Widget extends \Elementor\Widget_Base {
 	}
 
 	public function get_icon(): string {
-		return 'eicon-money';
+		return 'eicon-theme-builder';
 	}
 
 	public function get_categories(): array {
