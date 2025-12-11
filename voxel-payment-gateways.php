@@ -305,6 +305,12 @@ function init_plugin() {
 	// Load Stripe enhancements
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-stripe-controller.php';
 
+	// Load Wallet files
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-wallet-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-wallet-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-wallet-ajax-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-wallet-deposit-controller.php';
+
 	// Initialize controllers
 	new Controllers\PayPal_Controller();
 	new Controllers\PayPal_Connect_Controller();
@@ -314,6 +320,7 @@ function init_plugin() {
 	new Controllers\MercadoPago_Controller();
 	new Controllers\Paystack_Controller();
 	new Controllers\Stripe_Controller();
+	new Controllers\Wallet_Controller();
 }
 
 // Initialize early but after Voxel
@@ -811,6 +818,10 @@ add_action( 'elementor/widgets/register', function( $widgets_manager ) {
 	// Paystack Connect Widget
 	require_once VOXEL_GATEWAYS_PATH . 'includes/widgets/class-paystack-connect-widget.php';
 	$widgets_manager->register( new \VoxelPayPal\Widgets\Paystack_Connect_Widget() );
+
+	// Wallet Widget
+	require_once VOXEL_GATEWAYS_PATH . 'includes/widgets/class-wallet-widget.php';
+	$widgets_manager->register( new \VoxelPayPal\Widgets\Wallet_Widget() );
 } );
 
 /**
@@ -1485,6 +1496,266 @@ add_shortcode( 'paystack_vendor_connect', function( $atts ) {
 } );
 
 /**
+ * Register shortcode for wallet (fallback for non-Elementor pages)
+ */
+add_shortcode( 'voxel_wallet', function( $atts ) {
+	$atts = shortcode_atts( [
+		'title' => __( 'My Wallet', 'voxel-payment-gateways' ),
+		'description' => __( 'Add funds to your wallet and use them for future purchases.', 'voxel-payment-gateways' ),
+		'button_text' => __( 'Add Funds', 'voxel-payment-gateways' ),
+		'show_history' => 'yes',
+		'history_limit' => 10,
+		'show_presets' => 'yes',
+	], $atts );
+
+	// Check if wallet is enabled
+	if ( ! \VoxelPayPal\Wallet_Client::is_enabled() ) {
+		if ( current_user_can( 'manage_options' ) ) {
+			return '<div class="voxel-wallet-shortcode"><p>' . __( 'Wallet feature is disabled. Enable it in Voxel Payments settings.', 'voxel-payment-gateways' ) . '</p></div>';
+		}
+		return '';
+	}
+
+	// Check if user is logged in
+	$user_id = get_current_user_id();
+	if ( ! $user_id ) {
+		return '<div class="voxel-wallet-shortcode"><p>' . __( 'Please log in to view your wallet.', 'voxel-payment-gateways' ) . '</p></div>';
+	}
+
+	$balance = \VoxelPayPal\Wallet_Client::get_balance( $user_id );
+	$balance_formatted = \VoxelPayPal\Wallet_Client::get_balance_formatted( $user_id );
+	$currency = \VoxelPayPal\Wallet_Client::get_site_currency();
+	$min_deposit = \VoxelPayPal\Wallet_Client::get_min_deposit();
+	$max_deposit = \VoxelPayPal\Wallet_Client::get_max_deposit();
+	$preset_amounts = \VoxelPayPal\Wallet_Client::get_preset_amounts();
+
+	$transactions = [];
+	if ( $atts['show_history'] === 'yes' ) {
+		$transactions = \VoxelPayPal\Wallet_Client::get_transactions( $user_id, [
+			'limit' => absint( $atts['history_limit'] ) ?: 10,
+		] );
+	}
+
+	// Check for deposit result message
+	$deposit_status = isset( $_GET['wallet_deposit'] ) ? sanitize_text_field( $_GET['wallet_deposit'] ) : null;
+	$deposit_message = isset( $_GET['wallet_message'] ) ? sanitize_text_field( urldecode( $_GET['wallet_message'] ) ) : null;
+
+	$widget_id = 'wallet-shortcode-' . wp_rand( 1000, 9999 );
+
+	ob_start();
+	?>
+	<div class="voxel-wallet-shortcode" id="<?php echo esc_attr( $widget_id ); ?>">
+		<?php if ( $atts['title'] ) : ?>
+			<div class="wallet-header">
+				<h2 class="wallet-title"><?php echo esc_html( $atts['title'] ); ?></h2>
+				<?php if ( $atts['description'] ) : ?>
+					<p class="wallet-description"><?php echo esc_html( $atts['description'] ); ?></p>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
+
+		<?php if ( $deposit_message ) : ?>
+			<div class="wallet-message <?php echo $deposit_status === 'success' ? 'success' : 'error'; ?>">
+				<?php echo esc_html( $deposit_message ); ?>
+			</div>
+		<?php endif; ?>
+
+		<div class="wallet-balance-card">
+			<div class="wallet-balance-label"><?php _e( 'Available Balance', 'voxel-payment-gateways' ); ?></div>
+			<div class="wallet-balance-amount"><?php echo esc_html( $balance_formatted ); ?></div>
+		</div>
+
+		<div class="wallet-add-funds">
+			<h3><?php _e( 'Add Funds', 'voxel-payment-gateways' ); ?></h3>
+
+			<div id="<?php echo esc_attr( $widget_id ); ?>-message" class="wallet-message" style="display: none;"></div>
+
+			<?php if ( $atts['show_presets'] === 'yes' && ! empty( $preset_amounts ) ) : ?>
+				<div class="wallet-preset-amounts">
+					<?php foreach ( $preset_amounts as $amount ) : ?>
+						<button type="button" class="wallet-preset-btn" data-amount="<?php echo esc_attr( $amount ); ?>">
+							<?php echo esc_html( \VoxelPayPal\Wallet_Client::format_amount( $amount, $currency ) ); ?>
+						</button>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+
+			<form id="<?php echo esc_attr( $widget_id ); ?>-form" class="wallet-deposit-form">
+				<div class="wallet-amount-input-group">
+					<div class="wallet-amount-wrapper">
+						<span class="wallet-currency-prefix"><?php echo esc_html( $currency ); ?></span>
+						<input
+							type="number"
+							id="<?php echo esc_attr( $widget_id ); ?>-amount"
+							class="wallet-amount-input"
+							name="amount"
+							placeholder="0.00"
+							min="<?php echo esc_attr( $min_deposit ); ?>"
+							max="<?php echo esc_attr( $max_deposit ); ?>"
+							step="0.01"
+							required
+						/>
+					</div>
+					<button type="submit" class="wallet-submit-btn" id="<?php echo esc_attr( $widget_id ); ?>-submit">
+						<?php echo esc_html( $atts['button_text'] ); ?>
+					</button>
+				</div>
+				<div class="wallet-limits">
+					<?php printf(
+						__( 'Min: %1$s | Max: %2$s', 'voxel-payment-gateways' ),
+						\VoxelPayPal\Wallet_Client::format_amount( $min_deposit, $currency ),
+						\VoxelPayPal\Wallet_Client::format_amount( $max_deposit, $currency )
+					); ?>
+				</div>
+			</form>
+		</div>
+
+		<?php if ( $atts['show_history'] === 'yes' ) : ?>
+			<div class="wallet-history">
+				<h3><?php _e( 'Transaction History', 'voxel-payment-gateways' ); ?></h3>
+				<div class="wallet-transactions">
+					<?php if ( empty( $transactions ) ) : ?>
+						<div class="wallet-no-transactions">
+							<?php _e( 'No transactions yet', 'voxel-payment-gateways' ); ?>
+						</div>
+					<?php else : ?>
+						<?php foreach ( $transactions as $tx ) : ?>
+							<div class="wallet-transaction">
+								<div class="wallet-tx-info">
+									<span class="wallet-tx-type">
+										<?php
+										$type_labels = [
+											'deposit' => __( 'Deposit', 'voxel-payment-gateways' ),
+											'purchase' => __( 'Purchase', 'voxel-payment-gateways' ),
+											'refund' => __( 'Refund', 'voxel-payment-gateways' ),
+											'adjustment' => __( 'Adjustment', 'voxel-payment-gateways' ),
+										];
+										echo esc_html( $type_labels[ $tx['type'] ] ?? ucfirst( $tx['type'] ) );
+										?>
+									</span>
+									<span class="wallet-tx-date">
+										<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $tx['created_at'] ) ) ); ?>
+									</span>
+								</div>
+								<span class="wallet-tx-amount <?php echo $tx['is_credit'] ? 'credit' : 'debit'; ?>">
+									<?php echo $tx['is_credit'] ? '+' : '-'; ?><?php echo esc_html( $tx['amount_formatted'] ); ?>
+								</span>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+			</div>
+		<?php endif; ?>
+
+		<script>
+		(function() {
+			const widgetId = '<?php echo esc_js( $widget_id ); ?>';
+			const form = document.getElementById(widgetId + '-form');
+			const amountInput = document.getElementById(widgetId + '-amount');
+			const submitBtn = document.getElementById(widgetId + '-submit');
+			const messageDiv = document.getElementById(widgetId + '-message');
+			const presetBtns = document.querySelectorAll('#' + widgetId + ' .wallet-preset-btn');
+
+			presetBtns.forEach(function(btn) {
+				btn.addEventListener('click', function() {
+					amountInput.value = this.getAttribute('data-amount');
+					presetBtns.forEach(b => b.classList.remove('active'));
+					this.classList.add('active');
+				});
+			});
+
+			amountInput.addEventListener('input', function() {
+				presetBtns.forEach(b => b.classList.remove('active'));
+			});
+
+			form.addEventListener('submit', async function(e) {
+				e.preventDefault();
+				const amount = parseFloat(amountInput.value);
+
+				if (isNaN(amount) || amount <= 0) {
+					showMessage('<?php echo esc_js( __( 'Please enter a valid amount', 'voxel-payment-gateways' ) ); ?>', 'error');
+					return;
+				}
+
+				submitBtn.disabled = true;
+				submitBtn.textContent = '<?php echo esc_js( __( 'Processing...', 'voxel-payment-gateways' ) ); ?>';
+				messageDiv.style.display = 'none';
+
+				try {
+					const response = await fetch('<?php echo home_url( '/?vx=1&action=wallet.deposit.initiate' ); ?>', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ amount: amount })
+					});
+
+					const data = await response.json();
+
+					if (data.success && data.redirect_url) {
+						window.location.href = data.redirect_url;
+					} else {
+						showMessage(data.message || '<?php echo esc_js( __( 'Failed to initiate deposit', 'voxel-payment-gateways' ) ); ?>', 'error');
+						submitBtn.disabled = false;
+						submitBtn.textContent = '<?php echo esc_js( $atts['button_text'] ); ?>';
+					}
+				} catch (error) {
+					showMessage('<?php echo esc_js( __( 'An error occurred', 'voxel-payment-gateways' ) ); ?>', 'error');
+					submitBtn.disabled = false;
+					submitBtn.textContent = '<?php echo esc_js( $atts['button_text'] ); ?>';
+				}
+			});
+
+			function showMessage(text, type) {
+				messageDiv.textContent = text;
+				messageDiv.className = 'wallet-message ' + type;
+				messageDiv.style.display = 'block';
+			}
+		})();
+		</script>
+
+		<style>
+		.voxel-wallet-shortcode { max-width: 600px; font-family: inherit; }
+		.voxel-wallet-shortcode .wallet-header { margin-bottom: 24px; }
+		.voxel-wallet-shortcode .wallet-title { font-size: 24px; font-weight: 600; margin: 0 0 8px 0; }
+		.voxel-wallet-shortcode .wallet-description { margin: 0; opacity: 0.7; font-size: 14px; }
+		.voxel-wallet-shortcode .wallet-balance-card { background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+		.voxel-wallet-shortcode .wallet-balance-label { font-size: 14px; opacity: 0.9; margin-bottom: 4px; }
+		.voxel-wallet-shortcode .wallet-balance-amount { font-size: 36px; font-weight: 700; }
+		.voxel-wallet-shortcode .wallet-add-funds { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+		.voxel-wallet-shortcode .wallet-add-funds h3 { font-size: 18px; font-weight: 600; margin: 0 0 16px 0; }
+		.voxel-wallet-shortcode .wallet-preset-amounts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+		.voxel-wallet-shortcode .wallet-preset-btn { padding: 8px 16px; border: 2px solid #4caf50; background: transparent; color: #4caf50; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+		.voxel-wallet-shortcode .wallet-preset-btn:hover, .voxel-wallet-shortcode .wallet-preset-btn.active { background: #4caf50; color: #fff; }
+		.voxel-wallet-shortcode .wallet-amount-input-group { display: flex; gap: 12px; align-items: stretch; }
+		.voxel-wallet-shortcode .wallet-amount-wrapper { flex: 1; position: relative; }
+		.voxel-wallet-shortcode .wallet-currency-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #666; }
+		.voxel-wallet-shortcode .wallet-amount-input { width: 100%; padding: 12px 12px 12px 48px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+		.voxel-wallet-shortcode .wallet-amount-input:focus { outline: none; border-color: #4caf50; }
+		.voxel-wallet-shortcode .wallet-submit-btn { padding: 12px 24px; background: #4caf50; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+		.voxel-wallet-shortcode .wallet-submit-btn:hover { opacity: 0.9; }
+		.voxel-wallet-shortcode .wallet-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+		.voxel-wallet-shortcode .wallet-message { padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
+		.voxel-wallet-shortcode .wallet-message.success { background: #e8f5e9; color: #2e7d32; }
+		.voxel-wallet-shortcode .wallet-message.error { background: #ffebee; color: #c62828; }
+		.voxel-wallet-shortcode .wallet-history { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; }
+		.voxel-wallet-shortcode .wallet-history h3 { font-size: 18px; font-weight: 600; margin: 0; padding: 16px 20px; border-bottom: 1px solid #e0e0e0; }
+		.voxel-wallet-shortcode .wallet-transactions { max-height: 400px; overflow-y: auto; }
+		.voxel-wallet-shortcode .wallet-transaction { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; }
+		.voxel-wallet-shortcode .wallet-transaction:last-child { border-bottom: none; }
+		.voxel-wallet-shortcode .wallet-tx-info { display: flex; flex-direction: column; gap: 2px; }
+		.voxel-wallet-shortcode .wallet-tx-type { font-weight: 500; font-size: 14px; }
+		.voxel-wallet-shortcode .wallet-tx-date { font-size: 12px; opacity: 0.6; }
+		.voxel-wallet-shortcode .wallet-tx-amount { font-weight: 600; font-size: 14px; }
+		.voxel-wallet-shortcode .wallet-tx-amount.credit { color: #2e7d32; }
+		.voxel-wallet-shortcode .wallet-tx-amount.debit { color: #c62828; }
+		.voxel-wallet-shortcode .wallet-no-transactions { padding: 24px; text-align: center; opacity: 0.6; }
+		.voxel-wallet-shortcode .wallet-limits { font-size: 12px; color: #888; margin-top: 8px; }
+		</style>
+	</div>
+	<?php
+	return ob_get_clean();
+} );
+
+/**
  * Plugin activation
  */
 register_activation_hook( __FILE__, function() {
@@ -1501,6 +1772,10 @@ register_activation_hook( __FILE__, function() {
 	if ( ! get_option( 'voxel_gateways_version' ) ) {
 		update_option( 'voxel_gateways_version', VOXEL_GATEWAYS_VERSION );
 	}
+
+	// Create wallet transactions table
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-wallet-client.php';
+	\VoxelPayPal\Wallet_Client::create_tables();
 } );
 
 /**
