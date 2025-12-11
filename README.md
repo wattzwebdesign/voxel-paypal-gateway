@@ -215,6 +215,16 @@ For issues or questions:
   - Webhook handling for payments, subscriptions, and marketplace events
   - Sandbox and live mode support
   - Supported currencies: ARS, BRL, CLP, COP, MXN, PEN, UYU
+- Added Paystack Payment Gateway integration
+  - Paystack Checkout integration (popup and redirect checkout)
+  - One-time payments for products and paid listings
+  - Subscription support with Paystack Plans for recurring payments
+  - Marketplace support with vendor subaccounts
+  - Split payments with configurable platform fees (percentage, fixed, or combined)
+  - Vendor Connect widget for Elementor
+  - Webhook handling for charge, subscription, and transfer events
+  - Test and live mode support
+  - Supported currencies: NGN, GHS, ZAR, KES, USD
 
 ### 1.0.0 - 2025-01-XX
 - Initial release

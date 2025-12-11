@@ -290,6 +290,18 @@ function init_plugin() {
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-mercadopago-payments-controller.php';
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-mercadopago-webhooks-controller.php';
 
+	// Load Paystack gateway files
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paystack-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paystack-connect-client.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/class-paystack-payment-service.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-paystack-payment.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-paystack-subscription.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-connect-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-payments-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-subscriptions-controller.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-paystack-webhooks-controller.php';
+
 	// Initialize controllers
 	new Controllers\PayPal_Controller();
 	new Controllers\PayPal_Connect_Controller();
@@ -297,6 +309,7 @@ function init_plugin() {
 	new Controllers\Offline_Controller();
 	new Controllers\Square_Controller();
 	new Controllers\MercadoPago_Controller();
+	new Controllers\Paystack_Controller();
 }
 
 // Initialize early but after Voxel
@@ -369,6 +382,23 @@ add_filter( 'voxel/product-types/payment-services', function( $payment_services 
 	$payment_services['mercadopago'] = new \VoxelPayPal\MercadoPago_Payment_Service();
 	return $payment_services;
 }, 103, 1 );
+
+/**
+ * Register Paystack payment service directly with lower priority to appear after other gateways
+ */
+add_filter( 'voxel/product-types/payment-services', function( $payment_services ) {
+	// Check license - don't register service if invalid
+	if ( ! is_license_valid() ) {
+		return $payment_services;
+	}
+
+	if ( ! class_exists( '\VoxelPayPal\Paystack_Payment_Service' ) ) {
+		return $payment_services;
+	}
+
+	$payment_services['paystack'] = new \VoxelPayPal\Paystack_Payment_Service();
+	return $payment_services;
+}, 104, 1 );
 
 /**
  * Inject PayPal icon and styles into payments screen
@@ -487,6 +517,34 @@ add_action( 'admin_head', function() {
 		.vx-panel.provider-mercadopago.active {
 			background: linear-gradient(45deg, rgba(0, 188, 255, .25) -20%, transparent 70%) !important;
 			border-color: rgba(0, 188, 255, .54) !important;
+		}
+
+		/* Paystack Payment Gateway Styles */
+		.paystack-panel {
+			background: #58c0f2 !important;
+			width: 50px;
+			height: 50px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			overflow: hidden;
+		}
+		.paystack-panel svg {
+			width: 32px !important;
+			height: 32px !important;
+		}
+		.paystack-panel svg path {
+			fill: #fff !important;
+		}
+		.vx-panel:not(.active).provider-paystack .paystack-panel {
+			filter: grayscale(1) !important;
+			opacity: 0.6 !important;
+		}
+		.vx-panel.provider-paystack.active {
+			background: linear-gradient(45deg, rgba(88, 192, 242, .25) -20%, transparent 70%) !important;
+			border-color: rgba(88, 192, 242, .54) !important;
 		}
 	</style>
 	<?php
@@ -613,6 +671,35 @@ add_action( 'admin_footer', function() {
 			return success;
 		}
 
+		function addPaystackIcon() {
+			const paystackPanels = document.querySelectorAll('.vx-panel.provider-paystack');
+
+			if (!paystackPanels.length) {
+				return false;
+			}
+
+			var success = false;
+			paystackPanels.forEach(function(panel) {
+				if (panel.querySelector('.panel-image')) {
+					success = true;
+					return;
+				}
+
+				const iconDiv = document.createElement('div');
+				iconDiv.className = 'panel-image paystack-panel';
+				// Paystack logo (horizontal bars)
+				iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44.6 44.3"><g><path d="M39.9,0H2.3C1.1,0,0,1.1,0,2.4v4.2C0,7.9,1.1,9,2.3,9h37.6c1.3,0,2.3-1.1,2.4-2.4V2.4C42.3,1.1,41.2,0,39.9,0L39.9,0z M39.9,23.6H2.3c-0.6,0-1.2,0.3-1.7,0.7C0.2,24.7,0,25.3,0,26v4.2c0,1.3,1.1,2.4,2.3,2.4h37.6c1.3,0,2.3-1,2.4-2.4V26C42.3,24.6,41.2,23.6,39.9,23.6L39.9,23.6z M23.5,35.4H2.3c-0.6,0-1.2,0.2-1.6,0.7c-0.4,0.4-0.7,1-0.7,1.7V42c0,1.3,1.1,2.4,2.3,2.4h21.1c1.3,0,2.3-1.1,2.3-2.4v-4.3C25.8,36.4,24.8,35.4,23.5,35.4L23.5,35.4z M42.3,11.8h-40c-0.6,0-1.2,0.2-1.6,0.7c-0.4,0.4-0.7,1-0.7,1.7v4.2c0,1.3,1.1,2.4,2.3,2.4h39.9c1.3,0,2.3-1.1,2.3-2.4v-4.2C44.6,12.9,43.6,11.8,42.3,11.8L42.3,11.8z"/></g></svg>';
+
+				const panelInfo = panel.querySelector('.panel-info');
+				if (panelInfo) {
+					panel.insertBefore(iconDiv, panelInfo);
+					success = true;
+				}
+			});
+
+			return success;
+		}
+
 		var attempts = 0;
 		var maxAttempts = 100;
 		var pollInterval = setInterval(function() {
@@ -621,7 +708,8 @@ add_action( 'admin_footer', function() {
 			var offlineDone = addOfflineIcon();
 			var squareDone = addSquareIcon();
 			var mercadopagoDone = addMercadoPagoIcon();
-			if ((paypalDone && offlineDone && squareDone && mercadopagoDone) || attempts >= maxAttempts) {
+			var paystackDone = addPaystackIcon();
+			if ((paypalDone && offlineDone && squareDone && mercadopagoDone && paystackDone) || attempts >= maxAttempts) {
 				clearInterval(pollInterval);
 			}
 		}, 100);
@@ -688,6 +776,10 @@ add_action( 'elementor/widgets/register', function( $widgets_manager ) {
 	// Mercado Pago Connect Widget
 	require_once VOXEL_GATEWAYS_PATH . 'includes/widgets/class-mercadopago-connect-widget.php';
 	$widgets_manager->register( new \VoxelPayPal\Widgets\MercadoPago_Connect_Widget() );
+
+	// Paystack Connect Widget
+	require_once VOXEL_GATEWAYS_PATH . 'includes/widgets/class-paystack-connect-widget.php';
+	$widgets_manager->register( new \VoxelPayPal\Widgets\Paystack_Connect_Widget() );
 } );
 
 /**
@@ -961,6 +1053,402 @@ add_shortcode( 'mercadopago_vendor_connect', function( $atts ) {
 		background: #e0e0e0 !important;
 	}
 	</style>
+	<?php
+	return ob_get_clean();
+} );
+
+/**
+ * Register shortcode for vendor Paystack bank connection (fallback for non-Elementor pages)
+ */
+add_shortcode( 'paystack_vendor_connect', function( $atts ) {
+	$user_id = get_current_user_id();
+
+	if ( ! $user_id ) {
+		return '<p>' . __( 'Please log in to manage your payout settings.', 'voxel-payment-gateways' ) . '</p>';
+	}
+
+	// Check if marketplace is enabled
+	if ( ! \VoxelPayPal\Paystack_Connect_Client::is_marketplace_enabled() ) {
+		return '';
+	}
+
+	$is_connected = \VoxelPayPal\Paystack_Connect_Client::is_vendor_connected( $user_id );
+	$bank_info = null;
+
+	if ( $is_connected ) {
+		$bank_info = \VoxelPayPal\Paystack_Connect_Client::get_vendor_bank_info( $user_id );
+	}
+
+	$connect_nonce = wp_create_nonce( 'paystack_connect_' . $user_id );
+	$disconnect_nonce = wp_create_nonce( 'paystack_disconnect_' . $user_id );
+	$ajax_url = home_url( '/?vx=1' );
+
+	ob_start();
+	?>
+	<div class="ps-vendor-connect-form" id="ps-shortcode-widget">
+		<h3><?php _e( 'Paystack Payout Account', 'voxel-payment-gateways' ); ?></h3>
+
+		<?php if ( $is_connected && $bank_info ) : ?>
+			<div class="ps-connect-status ps-connected">
+				<div class="ps-status-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+						<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+					</svg>
+				</div>
+				<div class="ps-status-info">
+					<span class="ps-status-label"><?php _e( 'Connected', 'voxel-payment-gateways' ); ?></span>
+					<?php if ( ! empty( $bank_info['account_name'] ) ) : ?>
+						<span class="ps-account-name"><?php echo esc_html( $bank_info['account_name'] ); ?></span>
+					<?php endif; ?>
+					<?php if ( ! empty( $bank_info['account_number'] ) ) : ?>
+						<span class="ps-account-number">****<?php echo esc_html( substr( $bank_info['account_number'], -4 ) ); ?></span>
+					<?php endif; ?>
+				</div>
+			</div>
+
+			<button type="button" class="ps-connect-button ps-disconnect" onclick="paystackShortcodeDisconnect()">
+				<?php _e( 'Disconnect', 'voxel-payment-gateways' ); ?>
+			</button>
+
+		<?php else : ?>
+			<p class="ps-connect-description"><?php _e( 'Connect your bank account to receive payments from your sales.', 'voxel-payment-gateways' ); ?></p>
+
+			<form class="ps-connect-form" id="ps-shortcode-form">
+				<input type="hidden" name="_wpnonce" value="<?php echo esc_attr( $connect_nonce ); ?>">
+
+				<div class="ps-form-group">
+					<label for="ps-shortcode-country"><?php _e( 'Country', 'voxel-payment-gateways' ); ?></label>
+					<select id="ps-shortcode-country" name="country" required>
+						<option value="nigeria"><?php _e( 'Nigeria', 'voxel-payment-gateways' ); ?></option>
+						<option value="ghana"><?php _e( 'Ghana', 'voxel-payment-gateways' ); ?></option>
+						<option value="south-africa"><?php _e( 'South Africa', 'voxel-payment-gateways' ); ?></option>
+						<option value="kenya"><?php _e( 'Kenya', 'voxel-payment-gateways' ); ?></option>
+					</select>
+				</div>
+
+				<div class="ps-form-group">
+					<label for="ps-shortcode-bank"><?php _e( 'Bank', 'voxel-payment-gateways' ); ?></label>
+					<select id="ps-shortcode-bank" name="bank_code" required disabled>
+						<option value=""><?php _e( 'Loading banks...', 'voxel-payment-gateways' ); ?></option>
+					</select>
+				</div>
+
+				<div class="ps-form-group">
+					<label for="ps-shortcode-account"><?php _e( 'Account Number', 'voxel-payment-gateways' ); ?></label>
+					<input type="text" id="ps-shortcode-account" name="account_number" required pattern="[0-9]{10,}" placeholder="<?php esc_attr_e( 'Enter your account number', 'voxel-payment-gateways' ); ?>">
+				</div>
+
+				<div class="ps-form-group ps-account-preview" id="ps-shortcode-preview" style="display: none;">
+					<label><?php _e( 'Account Name', 'voxel-payment-gateways' ); ?></label>
+					<div class="ps-account-name-display"></div>
+				</div>
+
+				<div class="ps-form-group">
+					<label for="ps-shortcode-business"><?php _e( 'Business Name (Optional)', 'voxel-payment-gateways' ); ?></label>
+					<input type="text" id="ps-shortcode-business" name="business_name" placeholder="<?php esc_attr_e( 'Your business or display name', 'voxel-payment-gateways' ); ?>">
+				</div>
+
+				<div class="ps-message" id="ps-shortcode-message" style="display: none;"></div>
+
+				<button type="submit" class="ps-connect-button" id="ps-shortcode-submit">
+					<?php _e( 'Connect Bank Account', 'voxel-payment-gateways' ); ?>
+				</button>
+			</form>
+		<?php endif; ?>
+	</div>
+
+	<style>
+	.ps-vendor-connect-form {
+		max-width: 500px;
+		padding: 20px;
+		border: 1px solid #e0e0e0;
+		border-radius: 8px;
+		background: #fff;
+	}
+	.ps-vendor-connect-form h3 {
+		margin: 0 0 10px 0;
+		font-size: 18px;
+		font-weight: 600;
+	}
+	.ps-connect-description {
+		margin: 0 0 20px 0;
+		color: #666;
+	}
+	.ps-connect-status {
+		display: flex;
+		align-items: center;
+		padding: 15px;
+		margin-bottom: 15px;
+		border-radius: 6px;
+		background: #e8f5e9;
+	}
+	.ps-connect-status.ps-connected .ps-status-icon {
+		color: #4caf50;
+		margin-right: 12px;
+	}
+	.ps-status-info {
+		display: flex;
+		flex-direction: column;
+	}
+	.ps-status-label {
+		font-weight: 600;
+		color: #2e7d32;
+	}
+	.ps-account-name, .ps-account-number {
+		font-size: 13px;
+		color: #666;
+		margin-top: 2px;
+	}
+	.ps-connect-form {
+		display: flex;
+		flex-direction: column;
+		gap: 15px;
+	}
+	.ps-form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+	}
+	.ps-form-group label {
+		font-weight: 500;
+		font-size: 14px;
+		color: #333;
+	}
+	.ps-form-group input,
+	.ps-form-group select {
+		padding: 10px 12px;
+		border: 1px solid #ddd;
+		border-radius: 6px;
+		font-size: 14px;
+	}
+	.ps-form-group input:focus,
+	.ps-form-group select:focus {
+		outline: none;
+		border-color: #58c0f2;
+	}
+	.ps-account-preview {
+		background: #e3f2fd;
+		padding: 12px;
+		border-radius: 6px;
+	}
+	.ps-account-name-display {
+		font-weight: 600;
+		color: #1976d2;
+	}
+	.ps-message {
+		padding: 12px;
+		border-radius: 6px;
+		font-size: 14px;
+	}
+	.ps-message.ps-error {
+		background: #ffebee;
+		color: #c62828;
+	}
+	.ps-message.ps-success {
+		background: #e8f5e9;
+		color: #2e7d32;
+	}
+	.ps-connect-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 12px 24px;
+		border: none;
+		border-radius: 6px;
+		font-size: 14px;
+		font-weight: 600;
+		text-decoration: none;
+		cursor: pointer;
+		transition: opacity 0.2s;
+		background-color: #58c0f2;
+		color: #fff;
+	}
+	.ps-connect-button:hover {
+		opacity: 0.9;
+	}
+	.ps-connect-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.ps-connect-button.ps-disconnect {
+		background: #f5f5f5 !important;
+		color: #666 !important;
+	}
+	.ps-connect-button.ps-disconnect:hover {
+		background: #e0e0e0 !important;
+	}
+	</style>
+
+	<script>
+	(function() {
+		const ajaxUrl = '<?php echo esc_js( $ajax_url ); ?>';
+		const isConnected = <?php echo $is_connected ? 'true' : 'false'; ?>;
+		const disconnectNonce = '<?php echo esc_js( $disconnect_nonce ); ?>';
+
+		<?php if ( ! $is_connected ) : ?>
+		const form = document.getElementById('ps-shortcode-form');
+		const countrySelect = document.getElementById('ps-shortcode-country');
+		const bankSelect = document.getElementById('ps-shortcode-bank');
+		const accountInput = document.getElementById('ps-shortcode-account');
+		const previewDiv = document.getElementById('ps-shortcode-preview');
+		const messageDiv = document.getElementById('ps-shortcode-message');
+		const submitBtn = document.getElementById('ps-shortcode-submit');
+
+		let resolveTimeout = null;
+		let resolvedAccountName = null;
+
+		async function loadBanks(country) {
+			bankSelect.disabled = true;
+			bankSelect.innerHTML = '<option value=""><?php echo esc_js( __( 'Loading banks...', 'voxel-payment-gateways' ) ); ?></option>';
+
+			try {
+				const response = await fetch(ajaxUrl + '&action=paystack.connect.banks&country=' + encodeURIComponent(country));
+				const data = await response.json();
+
+				if (data.success && data.banks) {
+					bankSelect.innerHTML = '<option value=""><?php echo esc_js( __( 'Select your bank', 'voxel-payment-gateways' ) ); ?></option>';
+					data.banks.forEach(bank => {
+						const option = document.createElement('option');
+						option.value = bank.code;
+						option.textContent = bank.name;
+						bankSelect.appendChild(option);
+					});
+					bankSelect.disabled = false;
+				}
+			} catch (error) {
+				console.error('Failed to load banks:', error);
+			}
+		}
+
+		async function resolveAccount() {
+			const accountNumber = accountInput.value.trim();
+			const bankCode = bankSelect.value;
+
+			if (accountNumber.length < 10 || !bankCode) {
+				previewDiv.style.display = 'none';
+				resolvedAccountName = null;
+				return;
+			}
+
+			previewDiv.style.display = 'block';
+			previewDiv.querySelector('.ps-account-name-display').textContent = '<?php echo esc_js( __( 'Verifying...', 'voxel-payment-gateways' ) ); ?>';
+
+			try {
+				const formData = new FormData();
+				formData.append('account_number', accountNumber);
+				formData.append('bank_code', bankCode);
+
+				const response = await fetch(ajaxUrl + '&action=paystack.connect.resolve', {
+					method: 'POST',
+					body: formData
+				});
+				const data = await response.json();
+
+				if (data.success && data.account_name) {
+					previewDiv.querySelector('.ps-account-name-display').textContent = data.account_name;
+					resolvedAccountName = data.account_name;
+				} else {
+					previewDiv.querySelector('.ps-account-name-display').textContent = '<?php echo esc_js( __( 'Could not verify account', 'voxel-payment-gateways' ) ); ?>';
+					resolvedAccountName = null;
+				}
+			} catch (error) {
+				previewDiv.querySelector('.ps-account-name-display').textContent = '<?php echo esc_js( __( 'Verification failed', 'voxel-payment-gateways' ) ); ?>';
+				resolvedAccountName = null;
+			}
+		}
+
+		function showMessage(text, type) {
+			messageDiv.textContent = text;
+			messageDiv.className = 'ps-message ps-' + type;
+			messageDiv.style.display = 'block';
+		}
+
+		countrySelect.addEventListener('change', function() {
+			loadBanks(this.value);
+			previewDiv.style.display = 'none';
+			resolvedAccountName = null;
+		});
+
+		bankSelect.addEventListener('change', function() {
+			if (accountInput.value.length >= 10) {
+				resolveAccount();
+			}
+		});
+
+		accountInput.addEventListener('input', function() {
+			clearTimeout(resolveTimeout);
+			if (this.value.length >= 10 && bankSelect.value) {
+				resolveTimeout = setTimeout(resolveAccount, 500);
+			} else {
+				previewDiv.style.display = 'none';
+				resolvedAccountName = null;
+			}
+		});
+
+		form.addEventListener('submit', async function(e) {
+			e.preventDefault();
+			messageDiv.style.display = 'none';
+
+			if (!resolvedAccountName) {
+				showMessage('<?php echo esc_js( __( 'Please wait for account verification to complete.', 'voxel-payment-gateways' ) ); ?>', 'error');
+				return;
+			}
+
+			submitBtn.disabled = true;
+			submitBtn.textContent = '<?php echo esc_js( __( 'Connecting...', 'voxel-payment-gateways' ) ); ?>';
+
+			try {
+				const formData = new FormData(form);
+				const response = await fetch(ajaxUrl + '&action=paystack.connect.submit', {
+					method: 'POST',
+					body: formData
+				});
+				const data = await response.json();
+
+				if (data.success) {
+					showMessage(data.message || '<?php echo esc_js( __( 'Bank account connected successfully!', 'voxel-payment-gateways' ) ); ?>', 'success');
+					setTimeout(() => location.reload(), 1500);
+				} else {
+					showMessage(data.message || '<?php echo esc_js( __( 'Failed to connect bank account.', 'voxel-payment-gateways' ) ); ?>', 'error');
+					submitBtn.disabled = false;
+					submitBtn.textContent = '<?php echo esc_js( __( 'Connect Bank Account', 'voxel-payment-gateways' ) ); ?>';
+				}
+			} catch (error) {
+				showMessage('<?php echo esc_js( __( 'An error occurred.', 'voxel-payment-gateways' ) ); ?>', 'error');
+				submitBtn.disabled = false;
+				submitBtn.textContent = '<?php echo esc_js( __( 'Connect Bank Account', 'voxel-payment-gateways' ) ); ?>';
+			}
+		});
+
+		loadBanks(countrySelect.value);
+		<?php endif; ?>
+
+		window.paystackShortcodeDisconnect = async function() {
+			if (!confirm('<?php echo esc_js( __( 'Are you sure you want to disconnect your bank account?', 'voxel-payment-gateways' ) ); ?>')) {
+				return;
+			}
+
+			try {
+				const formData = new FormData();
+				formData.append('_wpnonce', disconnectNonce);
+
+				const response = await fetch(ajaxUrl + '&action=paystack.connect.disconnect', {
+					method: 'POST',
+					body: formData
+				});
+				const data = await response.json();
+
+				if (data.success) {
+					location.reload();
+				} else {
+					alert(data.message || '<?php echo esc_js( __( 'Failed to disconnect.', 'voxel-payment-gateways' ) ); ?>');
+				}
+			} catch (error) {
+				alert('<?php echo esc_js( __( 'An error occurred.', 'voxel-payment-gateways' ) ); ?>');
+			}
+		};
+	})();
+	</script>
 	<?php
 	return ob_get_clean();
 } );
