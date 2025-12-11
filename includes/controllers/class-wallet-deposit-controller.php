@@ -264,12 +264,13 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	/**
 	 * Create PayPal deposit
 	 */
-	private function create_paypal_deposit( int $user_id, float $amount, string $currency ): array {
+	private function create_paypal_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
 		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
 
-		// Store pending deposit
+		// Store pending deposit with return URL
 		$this->store_pending_deposit( $deposit_id, [
 			'user_id' => $user_id,
+			'return_url' => $return_url,
 			'amount' => $amount,
 			'currency' => $currency,
 			'gateway' => 'paypal',
@@ -353,13 +354,14 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	/**
 	 * Create Paystack deposit
 	 */
-	private function create_paystack_deposit( int $user_id, float $amount, string $currency ): array {
+	private function create_paystack_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
 		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
 		$user = get_userdata( $user_id );
 
-		// Store pending deposit
+		// Store pending deposit with return URL
 		$this->store_pending_deposit( $deposit_id, [
 			'user_id' => $user_id,
+			'return_url' => $return_url,
 			'amount' => $amount,
 			'currency' => $currency,
 			'gateway' => 'paystack',
@@ -413,13 +415,14 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	/**
 	 * Create Mercado Pago deposit
 	 */
-	private function create_mercadopago_deposit( int $user_id, float $amount, string $currency ): array {
+	private function create_mercadopago_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
 		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
 		$user = get_userdata( $user_id );
 
-		// Store pending deposit
+		// Store pending deposit with return URL
 		$this->store_pending_deposit( $deposit_id, [
 			'user_id' => $user_id,
+			'return_url' => $return_url,
 			'amount' => $amount,
 			'currency' => $currency,
 			'gateway' => 'mercadopago',

@@ -30,6 +30,15 @@ class Wallet_Controller extends \Voxel\Controllers\Base_Controller {
 
 		// Inject wallet checkout toggle on frontend
 		$this->on( 'wp_footer', '@inject_checkout_wallet_toggle' );
+
+		// Add wallet management to WordPress user profile (admin only)
+		$this->on( 'show_user_profile', '@render_admin_wallet_section' );
+		$this->on( 'edit_user_profile', '@render_admin_wallet_section' );
+		$this->on( 'personal_options_update', '@save_admin_wallet_adjustment' );
+		$this->on( 'edit_user_profile_update', '@save_admin_wallet_adjustment' );
+
+		// Register dynamic tag for wallet balance
+		add_filter( 'voxel/dynamic-data/groups/user/properties', [ $this, 'register_wallet_dynamic_tags' ], 10, 2 );
 	}
 
 	/**
@@ -782,26 +791,83 @@ class Wallet_Controller extends \Voxel\Controllers\Base_Controller {
 					return true;
 				}
 
+				// Get order total to check if wallet can cover it
+				const orderTotal = getOrderTotal();
+				const canAfford = WALLET_BALANCE >= orderTotal && orderTotal > 0;
+				const hasBalance = WALLET_BALANCE > 0;
+
 				// Create wallet toggle container
 				const walletToggle = document.createElement('div');
 				walletToggle.className = 'wallet-checkout-toggle';
+
+				let insufficientMessage = '';
+				if (!hasBalance) {
+					insufficientMessage = '<span class="wallet-insufficient"><?php echo esc_js( __( 'No balance', 'voxel-payment-gateways' ) ); ?></span>';
+				} else if (!canAfford && orderTotal > 0) {
+					insufficientMessage = '<span class="wallet-insufficient"><?php echo esc_js( __( 'Insufficient funds', 'voxel-payment-gateways' ) ); ?></span>';
+				}
+
 				walletToggle.innerHTML = `
-					<div class="wallet-checkout-option">
+					<div class="wallet-checkout-option ${!canAfford ? 'wallet-disabled' : ''}">
 						<label class="wallet-checkout-label">
-							<input type="checkbox" id="use-wallet-balance" ${WALLET_BALANCE <= 0 ? 'disabled' : ''}>
+							<input type="checkbox" id="use-wallet-balance" ${!canAfford ? 'disabled' : ''}>
 							<span class="wallet-checkbox-custom"></span>
 							<span class="wallet-label-text">
 								<?php _e( 'Pay with Wallet', 'voxel-payment-gateways' ); ?>
 								<span class="wallet-balance">(${WALLET_BALANCE_FORMATTED})</span>
 							</span>
 						</label>
-						${WALLET_BALANCE <= 0 ? '<span class="wallet-insufficient"><?php _e( 'No balance', 'voxel-payment-gateways' ); ?></span>' : ''}
+						${insufficientMessage}
 					</div>
 				`;
 
 				// Insert before the submit button
 				submitBtn.parentNode.insertBefore(walletToggle, submitBtn);
 				walletToggleInjected = true;
+
+				// Function to update toggle state based on order total
+				function updateToggleState() {
+					const currentTotal = getOrderTotal();
+					const canNowAfford = WALLET_BALANCE >= currentTotal && currentTotal > 0;
+					const checkbox = document.getElementById('use-wallet-balance');
+					const option = walletToggle.querySelector('.wallet-checkout-option');
+					let insufficientEl = walletToggle.querySelector('.wallet-insufficient');
+
+					if (checkbox) {
+						checkbox.disabled = !canNowAfford;
+						if (!canNowAfford && checkbox.checked) {
+							checkbox.checked = false;
+							walletToggle.classList.remove('active');
+							if (submitBtn.dataset.originalText) {
+								submitBtn.textContent = submitBtn.dataset.originalText;
+							}
+						}
+					}
+
+					if (option) {
+						option.classList.toggle('wallet-disabled', !canNowAfford);
+					}
+
+					// Update insufficient message
+					if (!canNowAfford && !insufficientEl) {
+						const msgText = !hasBalance
+							? '<?php echo esc_js( __( 'No balance', 'voxel-payment-gateways' ) ); ?>'
+							: '<?php echo esc_js( __( 'Insufficient funds', 'voxel-payment-gateways' ) ); ?>';
+						insufficientEl = document.createElement('span');
+						insufficientEl.className = 'wallet-insufficient';
+						insufficientEl.textContent = msgText;
+						walletToggle.querySelector('.wallet-checkout-option').appendChild(insufficientEl);
+					} else if (canNowAfford && insufficientEl) {
+						insufficientEl.remove();
+					}
+				}
+
+				// Watch for price changes in checkout
+				const priceObserver = new MutationObserver(updateToggleState);
+				const checkoutArea = document.querySelector('.ts-checkout, .ts-cost-calculator');
+				if (checkoutArea) {
+					priceObserver.observe(checkoutArea, { childList: true, subtree: true, characterData: true });
+				}
 
 				// Add change handler
 				const checkbox = walletToggle.querySelector('#use-wallet-balance');
@@ -982,8 +1048,256 @@ class Wallet_Controller extends \Voxel\Controllers\Base_Controller {
 				background: rgba(244, 67, 54, 0.1);
 				padding: 4px 8px;
 				border-radius: 4px;
+				font-weight: 500;
+				white-space: nowrap;
+			}
+			.wallet-checkout-option.wallet-disabled {
+				opacity: 0.7;
+			}
+			.wallet-checkout-option.wallet-disabled .wallet-checkout-label {
+				cursor: not-allowed;
+			}
+			.wallet-checkout-option.wallet-disabled .wallet-balance {
+				color: #999;
 			}
 		</style>
 		<?php
+	}
+
+	/**
+	 * Render wallet management section on WordPress user profile (admin only)
+	 */
+	protected function render_admin_wallet_section( $user ): void {
+		// Only show for administrators
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Only show if wallet is enabled
+		if ( ! \VoxelPayPal\Wallet_Client::is_enabled() ) {
+			return;
+		}
+
+		$balance = \VoxelPayPal\Wallet_Client::get_balance( $user->ID );
+		$balance_formatted = \VoxelPayPal\Wallet_Client::get_balance_formatted( $user->ID );
+		$currency = \VoxelPayPal\Wallet_Client::get_site_currency();
+		$transactions = \VoxelPayPal\Wallet_Client::get_transactions( $user->ID, [ 'limit' => 5 ] );
+
+		?>
+		<h2><?php _e( 'Wallet Balance', 'voxel-payment-gateways' ); ?></h2>
+		<table class="form-table" role="presentation">
+			<tr>
+				<th><label><?php _e( 'Current Balance', 'voxel-payment-gateways' ); ?></label></th>
+				<td>
+					<p style="font-size: 24px; font-weight: bold; color: #4caf50; margin: 0;">
+						<?php echo esc_html( $balance_formatted ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="wallet_adjustment_amount"><?php _e( 'Adjust Balance', 'voxel-payment-gateways' ); ?></label></th>
+				<td>
+					<div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
+						<div>
+							<input
+								type="number"
+								name="wallet_adjustment_amount"
+								id="wallet_adjustment_amount"
+								step="0.01"
+								value=""
+								placeholder="0.00"
+								style="width: 120px;"
+							/>
+							<span style="margin-left: 4px;"><?php echo esc_html( $currency ); ?></span>
+						</div>
+						<div>
+							<select name="wallet_adjustment_type" id="wallet_adjustment_type" style="min-width: 150px;">
+								<option value="add"><?php _e( 'Add to balance', 'voxel-payment-gateways' ); ?></option>
+								<option value="subtract"><?php _e( 'Subtract from balance', 'voxel-payment-gateways' ); ?></option>
+								<option value="set"><?php _e( 'Set balance to', 'voxel-payment-gateways' ); ?></option>
+							</select>
+						</div>
+					</div>
+					<p class="description">
+						<?php _e( 'Enter an amount and select the action. Leave empty to make no changes.', 'voxel-payment-gateways' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="wallet_adjustment_reason"><?php _e( 'Reason (optional)', 'voxel-payment-gateways' ); ?></label></th>
+				<td>
+					<input
+						type="text"
+						name="wallet_adjustment_reason"
+						id="wallet_adjustment_reason"
+						class="regular-text"
+						placeholder="<?php esc_attr_e( 'e.g., Promotional credit, Refund, etc.', 'voxel-payment-gateways' ); ?>"
+					/>
+				</td>
+			</tr>
+			<?php if ( ! empty( $transactions ) ) : ?>
+			<tr>
+				<th><label><?php _e( 'Recent Transactions', 'voxel-payment-gateways' ); ?></label></th>
+				<td>
+					<table class="widefat striped" style="max-width: 500px;">
+						<thead>
+							<tr>
+								<th><?php _e( 'Type', 'voxel-payment-gateways' ); ?></th>
+								<th><?php _e( 'Amount', 'voxel-payment-gateways' ); ?></th>
+								<th><?php _e( 'Date', 'voxel-payment-gateways' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $transactions as $tx ) : ?>
+							<tr>
+								<td>
+									<?php
+									$type_labels = [
+										'deposit' => __( 'Deposit', 'voxel-payment-gateways' ),
+										'purchase' => __( 'Purchase', 'voxel-payment-gateways' ),
+										'refund' => __( 'Refund', 'voxel-payment-gateways' ),
+										'adjustment' => __( 'Adjustment', 'voxel-payment-gateways' ),
+									];
+									$type_label = $type_labels[ $tx['type'] ] ?? ucfirst( $tx['type'] );
+									if ( $tx['type'] === 'purchase' && $tx['reference_type'] === 'order' && $tx['reference_id'] ) {
+										$type_label .= ' #' . $tx['reference_id'];
+									}
+									echo esc_html( $type_label );
+									?>
+								</td>
+								<td style="color: <?php echo $tx['is_credit'] ? '#4caf50' : '#f44336'; ?>;">
+									<?php echo $tx['is_credit'] ? '+' : '-'; ?><?php echo esc_html( $tx['amount_formatted'] ); ?>
+								</td>
+								<td><?php echo esc_html( date_i18n( 'M j, Y', strtotime( $tx['created_at'] ) ) ); ?></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+			<?php endif; ?>
+		</table>
+		<?php wp_nonce_field( 'wallet_admin_adjustment', 'wallet_admin_nonce' ); ?>
+		<?php
+	}
+
+	/**
+	 * Save wallet adjustment from WordPress user profile
+	 */
+	protected function save_admin_wallet_adjustment( $user_id ): void {
+		// Only allow administrators
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Verify nonce
+		if ( ! isset( $_POST['wallet_admin_nonce'] ) || ! wp_verify_nonce( $_POST['wallet_admin_nonce'], 'wallet_admin_adjustment' ) ) {
+			return;
+		}
+
+		// Check if wallet is enabled
+		if ( ! \VoxelPayPal\Wallet_Client::is_enabled() ) {
+			return;
+		}
+
+		$amount = isset( $_POST['wallet_adjustment_amount'] ) ? floatval( $_POST['wallet_adjustment_amount'] ) : 0;
+		$type = isset( $_POST['wallet_adjustment_type'] ) ? sanitize_text_field( $_POST['wallet_adjustment_type'] ) : 'add';
+		$reason = isset( $_POST['wallet_adjustment_reason'] ) ? sanitize_text_field( $_POST['wallet_adjustment_reason'] ) : '';
+
+		// Skip if no amount entered
+		if ( $amount == 0 && $type !== 'set' ) {
+			return;
+		}
+
+		// Ensure amount is positive for add/subtract
+		$amount = abs( $amount );
+
+		$current_balance = \VoxelPayPal\Wallet_Client::get_balance( $user_id );
+		$description = $reason ?: __( 'Admin adjustment', 'voxel-payment-gateways' );
+		$admin_user = wp_get_current_user();
+		$description .= sprintf( ' (%s: %s)', __( 'by', 'voxel-payment-gateways' ), $admin_user->display_name );
+
+		switch ( $type ) {
+			case 'add':
+				\VoxelPayPal\Wallet_Client::credit( $user_id, $amount, [
+					'type' => 'adjustment',
+					'description' => $description,
+				] );
+				break;
+
+			case 'subtract':
+				if ( $amount > $current_balance ) {
+					// Can't subtract more than available
+					add_action( 'admin_notices', function() {
+						echo '<div class="notice notice-error"><p>' . esc_html__( 'Cannot subtract more than the current wallet balance.', 'voxel-payment-gateways' ) . '</p></div>';
+					} );
+					return;
+				}
+				\VoxelPayPal\Wallet_Client::debit( $user_id, $amount, [
+					'type' => 'adjustment',
+					'description' => $description,
+				] );
+				break;
+
+			case 'set':
+				// Calculate the difference and apply it
+				$difference = $amount - $current_balance;
+				if ( $difference > 0 ) {
+					\VoxelPayPal\Wallet_Client::credit( $user_id, $difference, [
+						'type' => 'adjustment',
+						'description' => $description,
+					] );
+				} elseif ( $difference < 0 ) {
+					\VoxelPayPal\Wallet_Client::debit( $user_id, abs( $difference ), [
+						'type' => 'adjustment',
+						'description' => $description,
+					] );
+				}
+				break;
+		}
+	}
+
+	/**
+	 * Register wallet dynamic tags for Voxel's dynamic data system
+	 * Usage: @user(wallet.balance) or @user(wallet.balance_formatted)
+	 */
+	public function register_wallet_dynamic_tags( $properties, $group ) {
+		// Only register if wallet is enabled
+		if ( ! \VoxelPayPal\Wallet_Client::is_enabled() ) {
+			return $properties;
+		}
+
+		// Create wallet object property with nested properties
+		$properties['wallet'] = \Voxel\Dynamic_Data\Tag::Object( __( 'Wallet', 'voxel-payment-gateways' ) )->properties( function() use ( $group ) {
+			return [
+				// Raw balance as number (e.g., 25.50)
+				'balance' => \Voxel\Dynamic_Data\Tag::Number( __( 'Balance', 'voxel-payment-gateways' ) )
+					->render( function() use ( $group ) {
+						$user = $group->get_user();
+						if ( ! $user ) {
+							return 0;
+						}
+						return \VoxelPayPal\Wallet_Client::get_balance( $user->get_id() );
+					} ),
+
+				// Formatted balance with currency (e.g., "$25.50")
+				'balance_formatted' => \Voxel\Dynamic_Data\Tag::String( __( 'Balance Formatted', 'voxel-payment-gateways' ) )
+					->render( function() use ( $group ) {
+						$user = $group->get_user();
+						if ( ! $user ) {
+							return \VoxelPayPal\Wallet_Client::format_amount( 0 );
+						}
+						return \VoxelPayPal\Wallet_Client::get_balance_formatted( $user->get_id() );
+					} ),
+
+				// Currency code (e.g., "USD")
+				'currency' => \Voxel\Dynamic_Data\Tag::String( __( 'Currency', 'voxel-payment-gateways' ) )
+					->render( function() {
+						return \VoxelPayPal\Wallet_Client::get_site_currency();
+					} ),
+			];
+		} );
+
+		return $properties;
 	}
 }
