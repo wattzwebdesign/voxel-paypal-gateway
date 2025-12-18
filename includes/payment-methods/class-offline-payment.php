@@ -51,6 +51,14 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 				$this->order->set_status( \Voxel\ORDER_PENDING_PAYMENT );
 			}
 
+			// Inject payment instructions into order_notes for @order(customer_notes) dynamic tag
+			$instructions = $this->get_rendered_instructions();
+			if ( $instructions ) {
+				$existing_notes = $this->order->get_details( 'order_notes' ) ?? '';
+				$separator = ! empty( $existing_notes ) ? "\n\n---\n\n" : '';
+				$this->order->set_details( 'order_notes', $existing_notes . $separator . $instructions );
+			}
+
 			$this->order->save();
 
 			// Get the order confirmation page URL
@@ -91,6 +99,29 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 			'order_id' => $this->order->get_id(),
 			'offline_payment' => 'success',
 		], home_url('/') );
+	}
+
+	/**
+	 * Get rendered payment instructions with dynamic tags processed
+	 * Used to inject into order_notes for @order(customer_notes) dynamic tag
+	 */
+	protected function get_rendered_instructions(): ?string {
+		$instructions = \Voxel\get( 'payments.offline.instructions' );
+
+		if ( ! is_string( $instructions ) || empty( $instructions ) ) {
+			return null;
+		}
+
+		// Render any dynamic tags if available
+		if ( class_exists( '\Voxel\Dynamic_Data\Group' ) ) {
+			$instructions = \Voxel\render( $instructions, [
+				'customer' => \Voxel\Dynamic_Data\Group::User( $this->order->get_customer() ),
+				'vendor' => \Voxel\Dynamic_Data\Group::User( $this->order->get_vendor() ),
+				'site' => \Voxel\Dynamic_Data\Group::Site(),
+			] );
+		}
+
+		return $instructions;
 	}
 
 	/**
