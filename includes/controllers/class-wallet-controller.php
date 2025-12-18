@@ -398,9 +398,19 @@ class Wallet_Controller extends \Voxel\Controllers\Base_Controller {
 			return;
 		}
 
+		// Check if trying to enable wallet without a real payment gateway
+		$wants_enabled = ! empty( $input['enabled'] );
+		if ( $wants_enabled && ! \VoxelPayPal\Wallet_Client::has_real_payment_gateway() ) {
+			wp_send_json( [
+				'success' => false,
+				'message' => __( 'Wallet requires a payment gateway (Stripe, PayPal, Paystack, or Mercado Pago) to be enabled. Offline Payment cannot be used for wallet deposits.', 'voxel-payment-gateways' ),
+			] );
+			return;
+		}
+
 		// Build wallet settings
 		$wallet_settings = [
-			'enabled' => ! empty( $input['enabled'] ),
+			'enabled' => $wants_enabled,
 			'min_deposit' => max( 0.01, floatval( $input['min_deposit'] ?? 1 ) ),
 			'max_deposit' => max( 1, floatval( $input['max_deposit'] ?? 10000 ) ),
 			'preset_amounts' => $this->parse_preset_amounts( $input['preset_amounts'] ?? '10, 25, 50, 100' ),

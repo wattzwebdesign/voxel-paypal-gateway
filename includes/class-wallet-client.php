@@ -47,12 +47,53 @@ class Wallet_Client {
 
 	/**
 	 * Check if wallet feature is enabled by admin
+	 * Also verifies a real payment gateway is available (not just offline)
 	 *
 	 * @return bool
 	 */
 	public static function is_enabled(): bool {
 		$settings = self::get_settings();
-		return (bool) $settings['enabled'];
+		if ( ! (bool) $settings['enabled'] ) {
+			return false;
+		}
+
+		// Wallet requires a real payment gateway for deposits
+		return self::has_real_payment_gateway();
+	}
+
+	/**
+	 * Check if a real payment gateway is available (not offline-only)
+	 * Wallet deposits require Stripe, PayPal, Paystack, or Mercado Pago
+	 *
+	 * @return bool
+	 */
+	public static function has_real_payment_gateway(): bool {
+		// Check Stripe
+		$stripe_mode = \Voxel\get( 'payments.stripe.mode', 'sandbox' );
+		$stripe_secret = ( $stripe_mode === 'live' )
+			? \Voxel\get( 'payments.stripe.live.api_key' )
+			: \Voxel\get( 'payments.stripe.sandbox.api_key' );
+
+		if ( ! empty( $stripe_secret ) ) {
+			return true;
+		}
+
+		// Check PayPal
+		if ( (bool) \Voxel\get( 'payments.paypal.enabled', false ) ) {
+			return true;
+		}
+
+		// Check Paystack
+		if ( (bool) \Voxel\get( 'payments.paystack.enabled', false ) ) {
+			return true;
+		}
+
+		// Check Mercado Pago
+		if ( (bool) \Voxel\get( 'payments.mercadopago.enabled', false ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

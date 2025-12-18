@@ -267,6 +267,7 @@ function init_plugin() {
 	// Load Offline gateway files
 	require_once VOXEL_GATEWAYS_PATH . 'includes/class-offline-payment-service.php';
 	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-offline-payment.php';
+	require_once VOXEL_GATEWAYS_PATH . 'includes/payment-methods/class-offline-subscription.php';
 	require_once VOXEL_GATEWAYS_PATH . 'includes/controllers/class-offline-controller.php';
 
 	// Load Square gateway files

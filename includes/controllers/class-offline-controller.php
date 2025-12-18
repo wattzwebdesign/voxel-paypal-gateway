@@ -4,6 +4,7 @@ namespace VoxelPayPal\Controllers;
 
 use VoxelPayPal\Offline_Payment_Service;
 use VoxelPayPal\Payment_Methods\Offline_Payment;
+use VoxelPayPal\Payment_Methods\Offline_Subscription;
 
 if ( ! defined('ABSPATH') ) {
 	exit;
@@ -25,6 +26,7 @@ class Offline_Controller extends \Voxel\Controllers\Base_Controller {
 	 */
 	protected function register_payment_methods( $payment_methods ) {
 		$payment_methods['offline_payment'] = Offline_Payment::class;
+		$payment_methods['offline_subscription'] = Offline_Subscription::class;
 		return $payment_methods;
 	}
 }

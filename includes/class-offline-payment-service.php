@@ -55,7 +55,7 @@ class Offline_Payment_Service extends \Voxel\Product_Types\Payment_Services\Base
 	}
 
 	public function get_subscription_handler(): ?string {
-		return null;
+		return 'offline_subscription';
 	}
 
 	public function get_primary_currency(): ?string {

@@ -115,6 +115,145 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	}
 
 	/**
+	 * Store pending deposit data
+	 * We use transients during the payment flow, then create an order on success
+	 */
+	protected function store_pending_deposit( string $deposit_id, array $data ): void {
+		set_transient( 'wallet_deposit_' . $deposit_id, $data, HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * Get pending deposit data
+	 */
+	protected function get_pending_deposit( string $deposit_id ): ?array {
+		$data = get_transient( 'wallet_deposit_' . $deposit_id );
+		return $data ?: null;
+	}
+
+	/**
+	 * Update pending deposit data
+	 */
+	protected function update_pending_deposit( string $deposit_id, array $updates ): void {
+		$data = $this->get_pending_deposit( $deposit_id );
+		if ( $data ) {
+			$data = array_merge( $data, $updates );
+			$this->store_pending_deposit( $deposit_id, $data );
+		}
+	}
+
+	/**
+	 * Delete pending deposit data
+	 */
+	protected function delete_pending_deposit( string $deposit_id ): void {
+		delete_transient( 'wallet_deposit_' . $deposit_id );
+	}
+
+	/**
+	 * Create a completed wallet deposit order
+	 * Called after payment is confirmed - creates order in completed state
+	 * Orders are stored in Voxel's custom vx_orders table
+	 */
+	protected function create_completed_deposit_order( int $user_id, float $amount, string $currency, string $gateway, string $transaction_id ): ?int {
+		global $wpdb;
+
+		// Get or create system post for wallet deposits
+		$wallet_post_id = $this->get_wallet_system_post_id();
+
+		// Build order details
+		$details = [
+			'wallet' => [
+				'is_deposit' => true,
+				'deposit_amount' => $amount,
+				'gateway' => $gateway,
+				'gateway_transaction_id' => $transaction_id,
+				'created_at' => \Voxel\utc()->format( 'Y-m-d H:i:s' ),
+			],
+			'pricing' => [
+				'total' => $amount,
+				'currency' => $currency,
+			],
+			'cart' => [
+				'type' => 'direct_cart',
+				'items' => [],
+			],
+			'meta' => [],
+		];
+
+		// Insert into Voxel's orders table
+		$result = $wpdb->insert( $wpdb->prefix . 'vx_orders', [
+			'customer_id' => $user_id,
+			'vendor_id' => null,
+			'status' => 'completed',
+			'shipping_status' => null,
+			'payment_method' => $gateway . '_payment',
+			'transaction_id' => $transaction_id,
+			'details' => wp_json_encode( $details ),
+			'parent_id' => null,
+			'testmode' => \Voxel\is_test_mode() ? 1 : 0,
+			'created_at' => \Voxel\utc()->format( 'Y-m-d H:i:s' ),
+		] );
+
+		if ( $result === false ) {
+			return null;
+		}
+
+		$order_id = $wpdb->insert_id;
+
+		// Insert order item for display
+		// 'type' => 'regular' is required for Voxel to load the item
+		$item_details = [
+			'type' => 'regular',
+			'product' => [
+				'label' => __( 'Wallet Reload', 'voxel-payment-gateways' ),
+			],
+			'currency' => $currency,
+			'summary' => [
+				'quantity' => 1,
+				'amount_per_unit' => $amount,
+				'total_amount' => $amount,
+			],
+		];
+
+		$wpdb->insert( $wpdb->prefix . 'vx_order_items', [
+			'order_id' => $order_id,
+			'post_id' => $wallet_post_id,
+			'product_type' => 'wallet_deposit',
+			'field_key' => 'voxel:wallet',
+			'details' => wp_json_encode( $item_details ),
+		] );
+
+		return $order_id;
+	}
+
+	/**
+	 * Get or create the system post used for wallet deposit orders
+	 */
+	protected function get_wallet_system_post_id(): int {
+		$post_id = get_option( 'voxel_wallet_system_post_id' );
+
+		if ( $post_id && get_post( $post_id ) ) {
+			return (int) $post_id;
+		}
+
+		// Create hidden system post
+		$post_id = wp_insert_post( [
+			'post_type' => 'page',
+			'post_status' => 'private',
+			'post_title' => __( 'Wallet Deposit', 'voxel-payment-gateways' ),
+			'post_content' => '',
+			'post_author' => 1,
+		] );
+
+		if ( $post_id && ! is_wp_error( $post_id ) ) {
+			update_option( 'voxel_wallet_system_post_id', $post_id );
+			return $post_id;
+		}
+
+		// Fallback to site homepage
+		return (int) get_option( 'page_on_front', 1 );
+	}
+
+	/**
 	 * Get the active payment gateway
 	 */
 	private function get_active_payment_gateway(): ?string {
@@ -182,17 +321,7 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		$user = get_userdata( $user_id );
 
 		// Generate unique deposit ID
-		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
-
-		// Store pending deposit with return URL
-		$this->store_pending_deposit( $deposit_id, [
-			'user_id' => $user_id,
-			'return_url' => $return_url,
-			'amount' => $amount,
-			'currency' => $currency,
-			'gateway' => 'stripe',
-			'created_at' => current_time( 'mysql', true ),
-		] );
+		$deposit_id = wp_generate_uuid4();
 
 		// Create Stripe checkout session
 		try {
@@ -241,9 +370,15 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 
 			$session = $stripe->checkout->sessions->create( $session_data );
 
-			// Update pending deposit with session ID
-			$this->update_pending_deposit( $deposit_id, [
-				'stripe_session_id' => $session->id,
+			// Store deposit data in transient
+			$this->store_pending_deposit( $deposit_id, [
+				'user_id' => $user_id,
+				'amount' => $amount,
+				'currency' => $currency,
+				'gateway' => 'stripe',
+				'session_id' => $session->id,
+				'return_url' => $return_url,
+				'created_at' => time(),
 			] );
 
 			return [
@@ -253,7 +388,6 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 			];
 
 		} catch ( \Exception $e ) {
-			$this->delete_pending_deposit( $deposit_id );
 			return [
 				'success' => false,
 				'message' => $e->getMessage(),
@@ -265,25 +399,16 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	 * Create PayPal deposit
 	 */
 	private function create_paypal_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
-		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
-
-		// Store pending deposit with return URL
-		$this->store_pending_deposit( $deposit_id, [
-			'user_id' => $user_id,
-			'return_url' => $return_url,
-			'amount' => $amount,
-			'currency' => $currency,
-			'gateway' => 'paypal',
-			'created_at' => current_time( 'mysql', true ),
-		] );
+		// Generate unique deposit ID
+		$deposit_id = wp_generate_uuid4();
 
 		$amount_formatted = number_format( $amount, 2, '.', '' );
 
-		$order_data = [
+		$paypal_order_data = [
 			'intent' => 'CAPTURE',
 			'purchase_units' => [
 				[
-					'reference_id' => $deposit_id,
+					'reference_id' => 'wallet_deposit_' . $deposit_id,
 					'custom_id' => $deposit_id,
 					'description' => __( 'Wallet Deposit', 'voxel-payment-gateways' ),
 					'amount' => [
@@ -310,10 +435,9 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 			],
 		];
 
-		$response = \VoxelPayPal\PayPal_Client::create_order( $order_data );
+		$response = \VoxelPayPal\PayPal_Client::create_order( $paypal_order_data );
 
 		if ( ! $response['success'] ) {
-			$this->delete_pending_deposit( $deposit_id );
 			return [
 				'success' => false,
 				'message' => $response['error'] ?? __( 'Failed to create PayPal order', 'voxel-payment-gateways' ),
@@ -321,11 +445,6 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		}
 
 		$paypal_order = $response['data'];
-
-		// Update pending deposit with PayPal order ID
-		$this->update_pending_deposit( $deposit_id, [
-			'paypal_order_id' => $paypal_order['id'],
-		] );
 
 		// Find approval URL
 		$approval_url = null;
@@ -337,12 +456,22 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		}
 
 		if ( ! $approval_url ) {
-			$this->delete_pending_deposit( $deposit_id );
 			return [
 				'success' => false,
 				'message' => __( 'PayPal approval URL not found', 'voxel-payment-gateways' ),
 			];
 		}
+
+		// Store deposit data in transient
+		$this->store_pending_deposit( $deposit_id, [
+			'user_id' => $user_id,
+			'amount' => $amount,
+			'currency' => $currency,
+			'gateway' => 'paypal',
+			'paypal_order_id' => $paypal_order['id'],
+			'return_url' => $return_url,
+			'created_at' => time(),
+		] );
 
 		return [
 			'success' => true,
@@ -355,21 +484,16 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	 * Create Paystack deposit
 	 */
 	private function create_paystack_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
-		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
 		$user = get_userdata( $user_id );
 
-		// Store pending deposit with return URL
-		$this->store_pending_deposit( $deposit_id, [
-			'user_id' => $user_id,
-			'return_url' => $return_url,
-			'amount' => $amount,
-			'currency' => $currency,
-			'gateway' => 'paystack',
-			'created_at' => current_time( 'mysql', true ),
-		] );
+		// Generate unique deposit ID
+		$deposit_id = wp_generate_uuid4();
 
 		// Paystack uses kobo (smallest currency unit)
 		$amount_kobo = (int) round( $amount * 100 );
+
+		// Generate reference using deposit ID
+		$reference = 'wallet_deposit_' . $deposit_id;
 
 		$callback_url = add_query_arg( [
 			'vx' => 1,
@@ -382,7 +506,7 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 			'email' => $user->user_email,
 			'amount' => $amount_kobo,
 			'currency' => $currency,
-			'reference' => $deposit_id,
+			'reference' => $reference,
 			'callback_url' => $callback_url,
 			'metadata' => [
 				'wallet_deposit' => true,
@@ -392,17 +516,22 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		] );
 
 		if ( ! $response['success'] ) {
-			$this->delete_pending_deposit( $deposit_id );
 			return [
 				'success' => false,
 				'message' => $response['error'] ?? __( 'Failed to initialize Paystack transaction', 'voxel-payment-gateways' ),
 			];
 		}
 
-		// Update pending deposit with reference
-		$this->update_pending_deposit( $deposit_id, [
-			'paystack_reference' => $response['data']['reference'] ?? $deposit_id,
+		// Store deposit data in transient
+		$this->store_pending_deposit( $deposit_id, [
+			'user_id' => $user_id,
+			'amount' => $amount,
+			'currency' => $currency,
+			'gateway' => 'paystack',
+			'paystack_reference' => $response['data']['reference'] ?? $reference,
 			'paystack_access_code' => $response['data']['access_code'] ?? null,
+			'return_url' => $return_url,
+			'created_at' => time(),
 		] );
 
 		return [
@@ -416,18 +545,10 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	 * Create Mercado Pago deposit
 	 */
 	private function create_mercadopago_deposit( int $user_id, float $amount, string $currency, string $return_url = '' ): array {
-		$deposit_id = 'wallet_deposit_' . $user_id . '_' . time() . '_' . wp_rand( 1000, 9999 );
 		$user = get_userdata( $user_id );
 
-		// Store pending deposit with return URL
-		$this->store_pending_deposit( $deposit_id, [
-			'user_id' => $user_id,
-			'return_url' => $return_url,
-			'amount' => $amount,
-			'currency' => $currency,
-			'gateway' => 'mercadopago',
-			'created_at' => current_time( 'mysql', true ),
-		] );
+		// Generate unique deposit ID
+		$deposit_id = wp_generate_uuid4();
 
 		$success_url = add_query_arg( [
 			'vx' => 1,
@@ -460,7 +581,7 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 				'pending' => $success_url,
 			],
 			'auto_return' => 'approved',
-			'external_reference' => $deposit_id,
+			'external_reference' => 'wallet_deposit_' . $deposit_id,
 			'metadata' => [
 				'wallet_deposit' => 'true',
 				'deposit_id' => $deposit_id,
@@ -471,16 +592,21 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		$response = \VoxelPayPal\MercadoPago_Client::create_preference( $preference_data );
 
 		if ( ! $response['success'] ) {
-			$this->delete_pending_deposit( $deposit_id );
 			return [
 				'success' => false,
 				'message' => $response['error'] ?? __( 'Failed to create Mercado Pago preference', 'voxel-payment-gateways' ),
 			];
 		}
 
-		// Update pending deposit
-		$this->update_pending_deposit( $deposit_id, [
+		// Store deposit data in transient
+		$this->store_pending_deposit( $deposit_id, [
+			'user_id' => $user_id,
+			'amount' => $amount,
+			'currency' => $currency,
+			'gateway' => 'mercadopago',
 			'mercadopago_preference_id' => $response['data']['id'] ?? null,
+			'return_url' => $return_url,
+			'created_at' => time(),
 		] );
 
 		$checkout_url = \VoxelPayPal\MercadoPago_Client::is_test_mode()
@@ -505,38 +631,55 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 			wp_die( __( 'Invalid deposit', 'voxel-payment-gateways' ) );
 		}
 
-		$pending = $this->get_pending_deposit( $deposit_id );
+		// Get pending deposit from transient
+		$deposit = $this->get_pending_deposit( $deposit_id );
 
-		if ( ! $pending ) {
-			wp_die( __( 'Deposit not found', 'voxel-payment-gateways' ) );
+		if ( ! $deposit ) {
+			wp_die( __( 'Deposit not found or expired', 'voxel-payment-gateways' ) );
 		}
 
-		$return_url = $pending['return_url'] ?? '';
-
 		// Check if already processed
-		if ( ! empty( $pending['processed'] ) ) {
+		if ( ! empty( $deposit['processed'] ) ) {
+			$return_url = $deposit['return_url'] ?? '';
 			$this->redirect_after_deposit( true, __( 'Funds already added to your wallet', 'voxel-payment-gateways' ), $return_url );
 			return;
 		}
 
+		$user_id = $deposit['user_id'];
+		$amount = floatval( $deposit['amount'] );
+		$currency = $deposit['currency'];
+		$return_url = $deposit['return_url'] ?? '';
+
+		// Verify deposit belongs to current user (if logged in)
+		$current_user_id = get_current_user_id();
+		if ( $current_user_id && $current_user_id !== $user_id ) {
+			wp_die( __( 'Permission denied', 'voxel-payment-gateways' ) );
+		}
+
 		try {
 			// Verify payment with gateway
-			$verified = $this->verify_gateway_payment( $gateway, $pending );
+			$verification = $this->verify_gateway_payment( $gateway, $deposit );
 
-			if ( ! $verified ) {
+			if ( ! $verification['success'] ) {
 				$this->redirect_after_deposit( false, __( 'Payment verification failed', 'voxel-payment-gateways' ), $return_url );
 				return;
 			}
 
+			$gateway_transaction_id = $verification['transaction_id'] ?? '';
+
+			// Create the Voxel order now that payment is confirmed
+			$order_id = $this->create_completed_deposit_order( $user_id, $amount, $currency, $gateway, $gateway_transaction_id );
+
 			// Credit the wallet
-			$result = \VoxelPayPal\Wallet_Client::credit( $pending['user_id'], $pending['amount'], [
+			$result = \VoxelPayPal\Wallet_Client::credit( $user_id, $amount, [
 				'type' => 'deposit',
+				'reference_type' => 'order',
+				'reference_id' => $order_id ?: 0,
 				'gateway' => $gateway,
-				'gateway_transaction_id' => $pending['gateway_transaction_id'] ?? null,
-				'description' => sprintf(
-					__( 'Wallet deposit via %s', 'voxel-payment-gateways' ),
-					ucfirst( $gateway )
-				),
+				'gateway_transaction_id' => $gateway_transaction_id,
+				'description' => $order_id
+					? sprintf( __( 'Wallet deposit via %s (Order #%d)', 'voxel-payment-gateways' ), ucfirst( $gateway ), $order_id )
+					: sprintf( __( 'Wallet deposit via %s', 'voxel-payment-gateways' ), ucfirst( $gateway ) ),
 			] );
 
 			if ( ! $result['success'] ) {
@@ -544,19 +687,27 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 				return;
 			}
 
-			// Mark as processed
-			$this->update_pending_deposit( $deposit_id, [
-				'processed' => true,
-				'processed_at' => current_time( 'mysql', true ),
-				'wallet_transaction_id' => $result['transaction_id'],
-			] );
+			// Update order with wallet transaction ID if order was created
+			if ( $order_id ) {
+				$order = \Voxel\Product_Types\Orders\Order::get( $order_id );
+				if ( $order ) {
+					$order->set_details( 'wallet.credited', true );
+					$order->set_details( 'wallet.credited_at', \Voxel\utc()->format( 'Y-m-d H:i:s' ) );
+					$order->set_details( 'wallet.transaction_id', $result['transaction_id'] );
+					$order->save();
+				}
+			}
+
+			// Mark deposit as processed and delete transient
+			$this->update_pending_deposit( $deposit_id, [ 'processed' => true, 'order_id' => $order_id ] );
+			$this->delete_pending_deposit( $deposit_id );
 
 			// Fire action
-			do_action( 'voxel/wallet/deposit_completed', $pending['user_id'], $deposit_id, $pending['amount'] );
+			do_action( 'voxel/wallet/deposit_completed', $user_id, $order_id, $amount );
 
 			$this->redirect_after_deposit( true, sprintf(
 				__( '%s has been added to your wallet!', 'voxel-payment-gateways' ),
-				\VoxelPayPal\Wallet_Client::format_amount( $pending['amount'] )
+				\VoxelPayPal\Wallet_Client::format_amount( $amount )
 			), $return_url );
 
 		} catch ( \Exception $e ) {
@@ -565,128 +716,139 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	}
 
 	/**
-	 * Verify payment with gateway
+	 * Verify payment with gateway using transient deposit data
 	 */
-	private function verify_gateway_payment( string $gateway, array &$pending ): bool {
+	private function verify_gateway_payment( string $gateway, array $deposit ): array {
 		switch ( $gateway ) {
 			case 'stripe':
-				return $this->verify_stripe_payment( $pending );
+				return $this->verify_stripe_payment( $deposit );
 
 			case 'paypal':
-				return $this->verify_paypal_payment( $pending );
+				return $this->verify_paypal_payment( $deposit );
 
 			case 'paystack':
-				return $this->verify_paystack_payment( $pending );
+				return $this->verify_paystack_payment( $deposit );
 
 			case 'mercadopago':
-				return $this->verify_mercadopago_payment( $pending );
+				return $this->verify_mercadopago_payment( $deposit );
 
 			default:
-				return false;
+				return [ 'success' => false ];
 		}
 	}
 
 	/**
 	 * Verify Stripe payment
 	 */
-	private function verify_stripe_payment( array &$pending ): bool {
-		if ( empty( $pending['stripe_session_id'] ) ) {
-			return false;
+	private function verify_stripe_payment( array $deposit ): array {
+		$session_id = $deposit['session_id'] ?? '';
+
+		if ( empty( $session_id ) ) {
+			return [ 'success' => false ];
 		}
 
 		try {
 			$stripe = \Voxel\Modules\Stripe_Payments\Stripe_Client::getClient();
-			$session = $stripe->checkout->sessions->retrieve( $pending['stripe_session_id'] );
+			$session = $stripe->checkout->sessions->retrieve( $session_id );
 
 			if ( $session->payment_status !== 'paid' ) {
-				return false;
+				return [ 'success' => false ];
 			}
 
-			$pending['gateway_transaction_id'] = $session->payment_intent;
-			return true;
+			return [
+				'success' => true,
+				'transaction_id' => $session->payment_intent,
+			];
 
 		} catch ( \Exception $e ) {
-			return false;
+			return [ 'success' => false ];
 		}
 	}
 
 	/**
 	 * Verify PayPal payment
 	 */
-	private function verify_paypal_payment( array &$pending ): bool {
-		if ( empty( $pending['paypal_order_id'] ) ) {
-			return false;
+	private function verify_paypal_payment( array $deposit ): array {
+		$paypal_order_id = $deposit['paypal_order_id'] ?? '';
+
+		if ( empty( $paypal_order_id ) ) {
+			return [ 'success' => false ];
 		}
 
 		// Capture the PayPal order
-		$response = \VoxelPayPal\PayPal_Client::capture_order( $pending['paypal_order_id'] );
+		$response = \VoxelPayPal\PayPal_Client::capture_order( $paypal_order_id );
 
 		if ( ! $response['success'] ) {
 			// Check if already captured
-			$get_response = \VoxelPayPal\PayPal_Client::get_order( $pending['paypal_order_id'] );
+			$get_response = \VoxelPayPal\PayPal_Client::get_order( $paypal_order_id );
 			if ( $get_response['success'] && $get_response['data']['status'] === 'COMPLETED' ) {
-				$pending['gateway_transaction_id'] = $pending['paypal_order_id'];
-				return true;
+				return [
+					'success' => true,
+					'transaction_id' => $paypal_order_id,
+				];
 			}
-			return false;
+			return [ 'success' => false ];
 		}
 
 		$paypal_order = $response['data'];
 
 		if ( $paypal_order['status'] !== 'COMPLETED' ) {
-			return false;
+			return [ 'success' => false ];
 		}
 
 		// Get capture ID
+		$capture_id = $paypal_order_id;
 		if ( ! empty( $paypal_order['purchase_units'][0]['payments']['captures'][0]['id'] ) ) {
-			$pending['gateway_transaction_id'] = $paypal_order['purchase_units'][0]['payments']['captures'][0]['id'];
-		} else {
-			$pending['gateway_transaction_id'] = $pending['paypal_order_id'];
+			$capture_id = $paypal_order['purchase_units'][0]['payments']['captures'][0]['id'];
 		}
 
-		return true;
+		return [
+			'success' => true,
+			'transaction_id' => $capture_id,
+		];
 	}
 
 	/**
 	 * Verify Paystack payment
 	 */
-	private function verify_paystack_payment( array &$pending ): bool {
-		$reference = $_GET['reference'] ?? ( $pending['paystack_reference'] ?? null );
+	private function verify_paystack_payment( array $deposit ): array {
+		$reference = $_GET['reference'] ?? ( $deposit['paystack_reference'] ?? '' );
 
 		if ( empty( $reference ) ) {
-			return false;
+			return [ 'success' => false ];
 		}
 
 		$response = \VoxelPayPal\Paystack_Client::verify_transaction( $reference );
 
 		if ( ! $response['success'] ) {
-			return false;
+			return [ 'success' => false ];
 		}
 
 		if ( $response['data']['status'] !== 'success' ) {
-			return false;
+			return [ 'success' => false ];
 		}
 
-		$pending['gateway_transaction_id'] = $response['data']['reference'];
-		return true;
+		return [
+			'success' => true,
+			'transaction_id' => $response['data']['reference'],
+		];
 	}
 
 	/**
 	 * Verify Mercado Pago payment
 	 */
-	private function verify_mercadopago_payment( array &$pending ): bool {
+	private function verify_mercadopago_payment( array $deposit ): array {
 		$payment_id = $_GET['payment_id'] ?? null;
 		$status = $_GET['status'] ?? null;
 
 		if ( $status !== 'approved' ) {
-			return false;
+			return [ 'success' => false ];
 		}
 
-		if ( $payment_id ) {
-			$pending['gateway_transaction_id'] = $payment_id;
-		}
-
-		return true;
+		return [
+			'success' => true,
+			'transaction_id' => $payment_id ?: ( $deposit['mercadopago_preference_id'] ?? '' ),
+		];
 	}
 
 	/**
@@ -694,12 +856,17 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 	 */
 	protected function handle_deposit_cancel(): void {
 		$deposit_id = sanitize_text_field( $_GET['deposit_id'] ?? '' );
+		$return_url = '';
 
-		if ( ! empty( $deposit_id ) ) {
-			$this->delete_pending_deposit( $deposit_id );
+		if ( $deposit_id ) {
+			$deposit = $this->get_pending_deposit( $deposit_id );
+			if ( $deposit ) {
+				$return_url = $deposit['return_url'] ?? '';
+				$this->delete_pending_deposit( $deposit_id );
+			}
 		}
 
-		$this->redirect_after_deposit( false, __( 'Deposit was cancelled', 'voxel-payment-gateways' ) );
+		$this->redirect_after_deposit( false, __( 'Deposit was cancelled', 'voxel-payment-gateways' ), $return_url );
 	}
 
 	/**
@@ -746,8 +913,8 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 		}
 
 		$user_id = $order->get_customer()->get_id();
-		$amount = floatval( $order->get_details( 'pricing.total' ) );
-		$gateway = $order->get_details( 'payment.gateway' );
+		$amount = floatval( $order->get_details( 'wallet.deposit_amount' ) ?: $order->get_details( 'pricing.total' ) );
+		$gateway = $order->get_details( 'wallet.gateway' );
 
 		if ( $amount <= 0 || ! $user_id ) {
 			return;
@@ -761,12 +928,13 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 			'gateway' => $gateway,
 			'description' => sprintf(
 				__( 'Wallet deposit via %s (Order #%d)', 'voxel-payment-gateways' ),
-				ucfirst( $gateway ),
+				ucfirst( $gateway ?: 'unknown' ),
 				$order->get_id()
 			),
 		] );
 
 		if ( $result['success'] ) {
+			$order->set_status( \Voxel\ORDER_COMPLETED );
 			$order->set_details( 'wallet.credited', true );
 			$order->set_details( 'wallet.credited_at', \Voxel\utc()->format( 'Y-m-d H:i:s' ) );
 			$order->set_details( 'wallet.transaction_id', $result['transaction_id'] );
@@ -774,38 +942,5 @@ class Wallet_Deposit_Controller extends \Voxel\Controllers\Base_Controller {
 
 			do_action( 'voxel/wallet/deposit_completed', $user_id, $order->get_id(), $amount );
 		}
-	}
-
-	/**
-	 * Store pending deposit in transient
-	 */
-	private function store_pending_deposit( string $deposit_id, array $data ): void {
-		set_transient( 'wallet_deposit_' . $deposit_id, $data, HOUR_IN_SECONDS );
-	}
-
-	/**
-	 * Get pending deposit from transient
-	 */
-	private function get_pending_deposit( string $deposit_id ): ?array {
-		$data = get_transient( 'wallet_deposit_' . $deposit_id );
-		return $data ?: null;
-	}
-
-	/**
-	 * Update pending deposit
-	 */
-	private function update_pending_deposit( string $deposit_id, array $updates ): void {
-		$data = $this->get_pending_deposit( $deposit_id );
-		if ( $data ) {
-			$data = array_merge( $data, $updates );
-			$this->store_pending_deposit( $deposit_id, $data );
-		}
-	}
-
-	/**
-	 * Delete pending deposit
-	 */
-	private function delete_pending_deposit( string $deposit_id ): void {
-		delete_transient( 'wallet_deposit_' . $deposit_id );
 	}
 }
