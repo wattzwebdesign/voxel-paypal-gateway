@@ -189,7 +189,7 @@ For issues or questions:
 
 ## Changelog
 
-### 2.0.0 - 2025-12-17
+### 2.1.0 - 2025-12-17
 - Added Customer Wallet feature
   - Users can add funds to wallet via site's configured payment gateway
   - Pay for orders using wallet balance (pre-checkout toggle)
