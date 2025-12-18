@@ -189,7 +189,7 @@ For issues or questions:
 
 ## Changelog
 
-### 2.0.0 - 2025-12-11
+### 2.0.0 - 2025-12-17
 - Added Customer Wallet feature
   - Users can add funds to wallet via site's configured payment gateway
   - Pay for orders using wallet balance (pre-checkout toggle)
@@ -199,9 +199,15 @@ For issues or questions:
   - Wallet Elementor widget with comprehensive styling controls
   - Dynamic tag support: @user(wallet.balance), @user(wallet.balance_formatted)
   - Customizable labels for all widget text
+  - Wallet deposits now create proper Voxel orders visible in Orders dashboard
+  - Wallet cannot be enabled if only Offline payment gateway is available
 - Added Stripe enhancement: Skip checkout for zero amount orders
   - Toggle in Stripe Payments settings to bypass checkout when order total is $0
   - Orders complete immediately without redirecting to Stripe
+- Added Offline Subscription support
+  - Offline payments now work with subscriptions (paid members, paid listings)
+  - Subscriptions start as pending payment/pending approval until marked paid
+  - Vendor actions: Mark as Paid, Record Renewal, Cancel, Reactivate
 - Renamed plugin from "Voxel PayPal Gateway" to "Voxel Payment Gateways"
 - Added Offline Payment gateway (Cash on Delivery, Bank Transfer, Pay at Pickup)
 - Offline payments support pending payment and pending approval order statuses
