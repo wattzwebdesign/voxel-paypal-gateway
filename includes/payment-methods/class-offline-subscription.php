@@ -72,14 +72,6 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 			$this->order->set_details( 'offline.payment_history', [] );
 			$this->order->set_details( 'pricing.total', $total );
 
-			// Inject payment instructions into order_notes for @order(customer_notes) dynamic tag
-			$instructions = $this->get_rendered_instructions();
-			if ( $instructions ) {
-				$existing_notes = $this->order->get_details( 'order_notes' ) ?? '';
-				$separator = ! empty( $existing_notes ) ? "\n\n---\n\n" : '';
-				$this->order->set_details( 'order_notes', $existing_notes . $separator . $instructions );
-			}
-
 			// Set transaction ID
 			$this->order->set_transaction_id( $subscription_id );
 
@@ -93,6 +85,16 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 			}
 
 			$this->order->save();
+
+			// Inject payment instructions into order_notes for @order(customer_notes) dynamic tag
+			// Done after save so order data is fully populated
+			$instructions = $this->get_rendered_instructions();
+			if ( $instructions ) {
+				$existing_notes = $this->order->get_details( 'order_notes' ) ?? '';
+				$separator = ! empty( $existing_notes ) ? "\n\n---\n\n" : '';
+				$this->order->set_details( 'order_notes', $existing_notes . $separator . $instructions );
+				$this->order->save();
+			}
 
 			return [
 				'success' => true,
@@ -164,13 +166,37 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 			return null;
 		}
 
-		// Render any dynamic tags if available
+		// Render dynamic tags including order
 		if ( class_exists( '\Voxel\Dynamic_Data\Group' ) ) {
-			$instructions = \Voxel\render( $instructions, [
-				'customer' => \Voxel\Dynamic_Data\Group::User( $this->order->get_customer() ),
-				'vendor' => \Voxel\Dynamic_Data\Group::User( $this->order->get_vendor() ),
+			// Refresh order from database to ensure all data is loaded
+			$order = \Voxel\Product_Types\Orders\Order::get( $this->order->get_id() );
+			if ( ! $order ) {
+				$order = $this->order;
+			}
+
+			// Get customer - fallback to current user if not set on order
+			$customer = $order->get_customer();
+			if ( ! $customer && is_user_logged_in() ) {
+				$customer = \Voxel\User::get( get_current_user_id() );
+			}
+
+			// Get vendor - may be null for direct purchases
+			$vendor = $order->get_vendor();
+
+			$groups = [
+				'order' => \Voxel\Dynamic_Data\Group::Order( $order ),
 				'site' => \Voxel\Dynamic_Data\Group::Site(),
-			] );
+			];
+
+			// Only add customer/vendor groups if they exist
+			if ( $customer ) {
+				$groups['customer'] = \Voxel\Dynamic_Data\Group::User( $customer );
+			}
+			if ( $vendor ) {
+				$groups['vendor'] = \Voxel\Dynamic_Data\Group::User( $vendor );
+			}
+
+			$instructions = \Voxel\render( $instructions, $groups );
 		}
 
 		return $instructions;
@@ -403,67 +429,19 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 
 	/**
 	 * Customer actions for subscription
+	 * Note: Cancel actions handled by vendor actions which show for both
 	 */
 	public function get_customer_actions(): array {
-		$actions = [];
-		$status = $this->order->get_status();
-
-		// Allow customer to cancel pending orders
-		if ( $status === \Voxel\ORDER_PENDING_PAYMENT || $status === \Voxel\ORDER_PENDING_APPROVAL ) {
-			$actions[] = [
-				'action' => 'customer.cancel',
-				'label' => _x( 'Cancel order', 'order customer actions', 'voxel-payment-gateways' ),
-				'handler' => function() {
-					$this->order->set_status( \Voxel\ORDER_CANCELED );
-					$this->order->set_details( 'offline.subscription_status', 'canceled' );
-					$this->order->set_details( 'offline.canceled_at', \Voxel\utc()->format( 'Y-m-d H:i:s' ) );
-					$this->order->set_details( 'offline.canceled_by', get_current_user_id() );
-					$this->order->save();
-
-					if ( class_exists( '\Voxel\Events\Products\Orders\Customer_Canceled_Order_Event' ) ) {
-						( new \Voxel\Events\Products\Orders\Customer_Canceled_Order_Event )->dispatch( $this->order->get_id() );
-					}
-
-					return wp_send_json( [
-						'success' => true,
-					] );
-				},
-			];
-		}
-
-		// Allow customer to cancel active subscription
-		if ( $status === 'sub_active' ) {
-			$actions[] = [
-				'action' => 'customer.cancel_subscription',
-				'label' => _x( 'Cancel subscription', 'order customer actions', 'voxel-payment-gateways' ),
-				'handler' => function() {
-					$this->order->set_status( 'sub_canceled' );
-					$this->order->set_details( 'offline.subscription_status', 'canceled' );
-					$this->order->set_details( 'offline.canceled_at', \Voxel\utc()->format( 'Y-m-d H:i:s' ) );
-					$this->order->set_details( 'offline.canceled_by', get_current_user_id() );
-					$this->order->save();
-
-					if ( class_exists( '\Voxel\Events\Products\Orders\Customer_Canceled_Order_Event' ) ) {
-						( new \Voxel\Events\Products\Orders\Customer_Canceled_Order_Event )->dispatch( $this->order->get_id() );
-					}
-
-					return wp_send_json( [
-						'success' => true,
-					] );
-				},
-			];
-		}
-
-		return $actions;
+		return [];
 	}
 
 	/**
 	 * Get notes to display to customer after order
 	 */
 	public function get_notes_to_customer(): ?string {
-		$instructions = \Voxel\get( 'payments.offline.instructions' );
+		$rendered = $this->get_rendered_instructions();
 
-		if ( ! is_string( $instructions ) || empty( $instructions ) ) {
+		if ( ! $rendered ) {
 			return null;
 		}
 
@@ -473,7 +451,7 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 		$frequency = $interval['frequency'] ?? 1;
 
 		$interval_text = $frequency > 1 ? "{$frequency} {$unit}s" : $unit;
-		$instructions .= "\n\n" . sprintf(
+		$rendered .= "\n\n" . sprintf(
 			__( 'Billing cycle: Every %s', 'voxel-payment-gateways' ),
 			$interval_text
 		);
@@ -482,24 +460,15 @@ class Offline_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pay
 		$next_payment = $this->order->get_details( 'offline.next_payment_date' );
 		if ( $next_payment ) {
 			$next_date = date_i18n( get_option( 'date_format' ), $next_payment );
-			$instructions .= "\n" . sprintf(
+			$rendered .= "\n" . sprintf(
 				__( 'Next payment due: %s', 'voxel-payment-gateways' ),
 				$next_date
 			);
 		}
 
-		// Render dynamic tags if available
-		if ( class_exists( '\Voxel\Dynamic_Data\Group' ) ) {
-			$instructions = \Voxel\render( $instructions, [
-				'customer' => \Voxel\Dynamic_Data\Group::User( $this->order->get_customer() ),
-				'vendor' => \Voxel\Dynamic_Data\Group::User( $this->order->get_vendor() ),
-				'site' => \Voxel\Dynamic_Data\Group::Site(),
-			] );
-		}
+		$rendered = esc_html( $rendered );
+		$rendered = links_add_target( make_clickable( $rendered ) );
 
-		$instructions = esc_html( $instructions );
-		$instructions = links_add_target( make_clickable( $instructions ) );
-
-		return $instructions;
+		return $rendered;
 	}
 }

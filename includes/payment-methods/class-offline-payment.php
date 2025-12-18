@@ -51,15 +51,17 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 				$this->order->set_status( \Voxel\ORDER_PENDING_PAYMENT );
 			}
 
+			$this->order->save();
+
 			// Inject payment instructions into order_notes for @order(customer_notes) dynamic tag
+			// Done after save so order data is fully populated
 			$instructions = $this->get_rendered_instructions();
 			if ( $instructions ) {
 				$existing_notes = $this->order->get_details( 'order_notes' ) ?? '';
 				$separator = ! empty( $existing_notes ) ? "\n\n---\n\n" : '';
 				$this->order->set_details( 'order_notes', $existing_notes . $separator . $instructions );
+				$this->order->save();
 			}
-
-			$this->order->save();
 
 			// Get the order confirmation page URL
 			$redirect_url = $this->get_order_confirmation_url();
@@ -112,13 +114,37 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 			return null;
 		}
 
-		// Render any dynamic tags if available
+		// Render dynamic tags including order
 		if ( class_exists( '\Voxel\Dynamic_Data\Group' ) ) {
-			$instructions = \Voxel\render( $instructions, [
-				'customer' => \Voxel\Dynamic_Data\Group::User( $this->order->get_customer() ),
-				'vendor' => \Voxel\Dynamic_Data\Group::User( $this->order->get_vendor() ),
+			// Refresh order from database to ensure all data is loaded
+			$order = \Voxel\Product_Types\Orders\Order::get( $this->order->get_id() );
+			if ( ! $order ) {
+				$order = $this->order;
+			}
+
+			// Get customer - fallback to current user if not set on order
+			$customer = $order->get_customer();
+			if ( ! $customer && is_user_logged_in() ) {
+				$customer = \Voxel\User::get( get_current_user_id() );
+			}
+
+			// Get vendor - may be null for direct purchases
+			$vendor = $order->get_vendor();
+
+			$groups = [
+				'order' => \Voxel\Dynamic_Data\Group::Order( $order ),
 				'site' => \Voxel\Dynamic_Data\Group::Site(),
-			] );
+			];
+
+			// Only add customer/vendor groups if they exist
+			if ( $customer ) {
+				$groups['customer'] = \Voxel\Dynamic_Data\Group::User( $customer );
+			}
+			if ( $vendor ) {
+				$groups['vendor'] = \Voxel\Dynamic_Data\Group::User( $vendor );
+			}
+
+			$instructions = \Voxel\render( $instructions, $groups );
 		}
 
 		return $instructions;
@@ -191,35 +217,10 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 
 	/**
 	 * Customer actions
+	 * Note: Customer cancel handled by vendor.cancel action which shows for both
 	 */
 	public function get_customer_actions(): array {
-		$actions = [];
-		$status = $this->order->get_status();
-
-		// Allow customer to cancel unpaid orders
-		if ( $status === \Voxel\ORDER_PENDING_PAYMENT || $status === \Voxel\ORDER_PENDING_APPROVAL ) {
-			$actions[] = [
-				'action' => 'customer.cancel',
-				'label' => _x( 'Cancel order', 'order customer actions', 'voxel-payment-gateways' ),
-				'handler' => function() {
-					$this->order->set_status( \Voxel\ORDER_CANCELED );
-					$this->order->set_details( 'offline.canceled_at', \Voxel\utc()->format( 'Y-m-d H:i:s' ) );
-					$this->order->set_details( 'offline.canceled_by', get_current_user_id() );
-					$this->order->save();
-
-					// Dispatch event
-					if ( class_exists( '\Voxel\Events\Products\Orders\Customer_Canceled_Order_Event' ) ) {
-						( new \Voxel\Events\Products\Orders\Customer_Canceled_Order_Event )->dispatch( $this->order->get_id() );
-					}
-
-					return wp_send_json( [
-						'success' => true,
-					] );
-				},
-			];
-		}
-
-		return $actions;
+		return [];
 	}
 
 	/**
@@ -227,24 +228,15 @@ class Offline_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment_
 	 * Returns the payment instructions configured in settings
 	 */
 	public function get_notes_to_customer(): ?string {
-		$instructions = \Voxel\get( 'payments.offline.instructions' );
+		$rendered = $this->get_rendered_instructions();
 
-		if ( ! is_string( $instructions ) || empty( $instructions ) ) {
+		if ( ! $rendered ) {
 			return null;
 		}
 
-		// Render any dynamic tags if available
-		if ( class_exists( '\Voxel\Dynamic_Data\Group' ) ) {
-			$instructions = \Voxel\render( $instructions, [
-				'customer' => \Voxel\Dynamic_Data\Group::User( $this->order->get_customer() ),
-				'vendor' => \Voxel\Dynamic_Data\Group::User( $this->order->get_vendor() ),
-				'site' => \Voxel\Dynamic_Data\Group::Site(),
-			] );
-		}
+		$rendered = esc_html( $rendered );
+		$rendered = links_add_target( make_clickable( $rendered ) );
 
-		$instructions = esc_html( $instructions );
-		$instructions = links_add_target( make_clickable( $instructions ) );
-
-		return $instructions;
+		return $rendered;
 	}
 }

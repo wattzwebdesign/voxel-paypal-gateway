@@ -43,11 +43,59 @@ class Offline_Payment_Service extends \Voxel\Product_Types\Payment_Services\Base
 
 		$src = plugin_dir_url( VOXEL_GATEWAYS_FILE ) . 'assets/offline-settings.esm.js';
 
+		// Export dynamic groups for the tag editor
+		$dynamic_groups = $this->get_dynamic_tag_groups();
+
 		return [
 			'src' => add_query_arg( 'v', VOXEL_GATEWAYS_VERSION, $src ),
 			'template' => $template,
-			'data' => [],
+			'data' => [
+				'dynamic_groups' => $dynamic_groups,
+			],
 		];
+	}
+
+	/**
+	 * Get dynamic tag groups for the instructions editor
+	 * Exports customer, vendor, order, and site groups
+	 */
+	protected function get_dynamic_tag_groups(): array {
+		if ( ! class_exists( '\Voxel\Dynamic_Data\Exporter' ) ) {
+			return [];
+		}
+
+		$exporter = \Voxel\Dynamic_Data\Exporter::get();
+		$exporter->reset();
+
+		// Add groups using mock data via add_group_by_key
+		$exporter->add_group_by_key( 'user' );
+		$exporter->add_group_by_key( 'order' );
+		$exporter->add_group_by_key( 'site' );
+
+		$exported = $exporter->export();
+
+		// Restructure for our needs: customer, vendor (both user), order, site
+		$groups = [];
+
+		if ( isset( $exported['groups']['user'] ) ) {
+			$groups['customer'] = $exported['groups']['user'];
+			$groups['customer']['label'] = 'Customer';
+
+			$groups['vendor'] = $exported['groups']['user'];
+			$groups['vendor']['label'] = 'Vendor';
+		}
+
+		if ( isset( $exported['groups']['order'] ) ) {
+			$groups['order'] = $exported['groups']['order'];
+			$groups['order']['label'] = 'Order';
+		}
+
+		if ( isset( $exported['groups']['site'] ) ) {
+			$groups['site'] = $exported['groups']['site'];
+			$groups['site']['label'] = 'Site';
+		}
+
+		return $groups;
 	}
 
 	public function get_payment_handler(): ?string {

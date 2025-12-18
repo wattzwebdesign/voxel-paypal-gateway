@@ -42,12 +42,19 @@ if ( ! defined('ABSPATH') ) {
 		<h3><?php _e( 'Customer Instructions', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
-		<?php \Voxel\Utils\Form_Models\Textarea_Model::render( [
-			'v-model' => 'settings.instructions',
-			'label' => 'Payment Instructions',
-			'classes' => 'x-col-12',
-			'infobox' => 'Instructions shown to customers after placing an order. Example: "Please have exact amount ready for delivery."',
-		] ) ?>
+		<div class="ts-form-group x-col-12">
+			<label><?php _e( 'Payment Instructions', 'voxel-payment-gateways' ); ?></label>
+			<textarea
+				:value="settings.instructions"
+				readonly
+				@click.prevent="editInstructions"
+				placeholder="<?php esc_attr_e( 'Click to add payment instructions with dynamic tags...', 'voxel-payment-gateways' ); ?>"
+				rows="4"
+			></textarea>
+			<p class="ts-form-group-info">
+				<?php _e( 'Instructions shown to customers after placing an order.', 'voxel-payment-gateways' ); ?>
+			</p>
+		</div>
 	</div>
 </div>
 
