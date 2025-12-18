@@ -215,6 +215,7 @@ For issues or questions:
 - Customer can cancel pending offline orders
 - Configurable payment instructions for offline orders
 - Offline payment instructions now available via @order(customer_notes) for email templates
+- Dynamic tag picker for offline payment instructions (click to open tag editor)
 - Updated package script to output versioned zip files to dist folder
 - Added Square Payment Gateway integration
   - Support for memberships, paid listings, and products
