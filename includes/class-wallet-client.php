@@ -78,18 +78,28 @@ class Wallet_Client {
 			return true;
 		}
 
-		// Check PayPal
-		if ( (bool) \Voxel\get( 'payments.paypal.enabled', false ) ) {
+		// Check PayPal - enabled if credentials are configured
+		$paypal_mode = \Voxel\get( 'payments.paypal.mode', 'sandbox' );
+		$paypal_client_id = \Voxel\get( "payments.paypal.{$paypal_mode}.client_id" );
+		$paypal_client_secret = \Voxel\get( "payments.paypal.{$paypal_mode}.client_secret" );
+
+		if ( ! empty( $paypal_client_id ) && ! empty( $paypal_client_secret ) ) {
 			return true;
 		}
 
-		// Check Paystack
-		if ( (bool) \Voxel\get( 'payments.paystack.enabled', false ) ) {
+		// Check Paystack - enabled if credentials are configured
+		$paystack_mode = \Voxel\get( 'payments.paystack.mode', 'sandbox' );
+		$paystack_secret = \Voxel\get( "payments.paystack.{$paystack_mode}.secret_key" );
+
+		if ( ! empty( $paystack_secret ) ) {
 			return true;
 		}
 
-		// Check Mercado Pago
-		if ( (bool) \Voxel\get( 'payments.mercadopago.enabled', false ) ) {
+		// Check Mercado Pago - enabled if credentials are configured
+		$mp_mode = \Voxel\get( 'payments.mercadopago.mode', 'sandbox' );
+		$mp_access_token = \Voxel\get( "payments.mercadopago.{$mp_mode}.access_token" );
+
+		if ( ! empty( $mp_access_token ) ) {
 			return true;
 		}
 
