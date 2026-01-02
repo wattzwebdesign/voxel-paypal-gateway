@@ -190,6 +190,7 @@ For issues or questions:
 ## Changelog
 
 ### 2.1.0 - 2025-12-17
+- Fixed wallet not detecting PayPal, Paystack, and Mercado Pago as valid gateways
 - Added Customer Wallet feature
   - Users can add funds to wallet via site's configured payment gateway
   - Pay for orders using wallet balance (pre-checkout toggle)
