@@ -176,6 +176,12 @@ class Paystack_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment
 		}
 		$transaction_data['metadata']['cart'] = $cart_items;
 
+		// Add payment channels if configured
+		$channels = $this->get_payment_channels();
+		if ( ! empty( $channels ) ) {
+			$transaction_data['channels'] = $channels;
+		}
+
 		// Add marketplace split if applicable
 		if ( $is_marketplace && $subaccount_code && $vendor_id ) {
 			$transaction_data['subaccount'] = $subaccount_code;
@@ -224,6 +230,14 @@ class Paystack_Payment extends \Voxel\Product_Types\Payment_Methods\Base_Payment
 	public function get_capture_method(): string {
 		$approval = \Voxel\get( 'payments.paystack.payments.order_approval', 'automatic' );
 		return $approval === 'manual' ? 'manual' : 'automatic';
+	}
+
+	/**
+	 * Get configured payment channels
+	 */
+	protected function get_payment_channels(): array {
+		$channels = \Voxel\get( 'payments.paystack.channels', [] );
+		return apply_filters( 'voxel/paystack/channels', $channels, $this->order );
 	}
 
 	/**

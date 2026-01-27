@@ -76,7 +76,7 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\\init_licensing', 1 );
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function( $links ) {
 	$license_link = sprintf(
 		'<a href="%s">%s</a>',
-		admin_url( 'options-general.php?page=voxel-payment-gateways-manage-license' ),
+		admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' ),
 		__( 'License', 'voxel-payment-gateways' )
 	);
 
@@ -91,14 +91,14 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function( $lin
  */
 add_action( 'admin_notices', function() {
 	// Don't show on license settings page
-	if ( isset( $_GET['page'] ) && $_GET['page'] === 'voxel-payment-gateways-manage-license' ) {
+	if ( isset( $_GET['page'] ) && $_GET['page'] === 'voxel-paypal-gateway-manage-license' ) {
 		return;
 	}
 
 	try {
 		$licensing = \VoxelPayPal\FluentLicensing::getInstance();
 		$status = $licensing->getStatus();
-		$license_url = admin_url( 'options-general.php?page=voxel-payment-gateways-manage-license' );
+		$license_url = admin_url( 'options-general.php?page=voxel-paypal-gateway-manage-license' );
 
 		// License not activated
 		if ( empty( $status['status'] ) || $status['status'] === 'unregistered' ) {

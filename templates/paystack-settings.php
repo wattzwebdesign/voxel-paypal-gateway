@@ -137,25 +137,53 @@ $webhook_url = home_url( '/?vx=1&action=paystack.webhooks' );
 	</div>
 </template>
 
-<!-- Payment Methods Info -->
+<!-- Payment Channels -->
 <div class="ts-group">
 	<div class="ts-group-head">
-		<h3><?php _e( 'Payment Methods', 'voxel-payment-gateways' ); ?></h3>
+		<h3><?php _e( 'Payment Channels', 'voxel-payment-gateways' ); ?></h3>
 	</div>
 	<div class="x-row">
 		<div class="ts-form-group x-col-12">
-			<p style="margin: 0 0 15px 0;"><?php _e( 'Paystack Checkout supports the following payment methods:', 'voxel-payment-gateways' ); ?></p>
-			<ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-				<li><strong><?php _e( 'Cards', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Visa, Mastercard, Verve, and American Express', 'voxel-payment-gateways' ); ?></li>
-				<li><strong><?php _e( 'Bank Transfer', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Pay via bank transfer with automatic confirmation', 'voxel-payment-gateways' ); ?></li>
-				<li><strong><?php _e( 'Mobile Money', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'MTN, Vodafone, AirtelTigo (Ghana)', 'voxel-payment-gateways' ); ?></li>
-				<li><strong><?php _e( 'USSD', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Pay using bank USSD codes (Nigeria)', 'voxel-payment-gateways' ); ?></li>
-				<li><strong><?php _e( 'QR Code', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Visa QR payments', 'voxel-payment-gateways' ); ?></li>
-				<li><strong><?php _e( 'Bank Account', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Direct bank debit (Nigeria)', 'voxel-payment-gateways' ); ?></li>
-			</ul>
+			<label><?php _e( 'Enabled Payment Methods', 'voxel-payment-gateways' ); ?></label>
+			<p class="ts-description" style="margin-bottom: 15px;">
+				<?php _e( 'Select which payment methods to show on the Paystack checkout. Leave empty to use all methods enabled in your Paystack dashboard.', 'voxel-payment-gateways' ); ?>
+			</p>
+
+			<div style="display: flex; flex-direction: column; gap: 10px;">
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="card" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'Card', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Visa, Mastercard, Verve, American Express', 'voxel-payment-gateways' ); ?></span>
+				</label>
+
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="mobile_money" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'Mobile Money', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'M-Pesa (Kenya), MTN/Vodafone/AirtelTigo (Ghana)', 'voxel-payment-gateways' ); ?></span>
+				</label>
+
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="bank_transfer" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'Bank Transfer', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Pay via bank transfer with automatic confirmation', 'voxel-payment-gateways' ); ?></span>
+				</label>
+
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="ussd" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'USSD', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Pay using bank USSD codes (Nigeria only)', 'voxel-payment-gateways' ); ?></span>
+				</label>
+
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="qr" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'QR Code', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Visa QR payments', 'voxel-payment-gateways' ); ?></span>
+				</label>
+
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" v-model="settings.channels" value="bank" style="width: 16px; height: 16px;">
+					<span><strong><?php _e( 'Bank Account', 'voxel-payment-gateways' ); ?></strong> - <?php _e( 'Direct bank debit (Nigeria only)', 'voxel-payment-gateways' ); ?></span>
+				</label>
+			</div>
+
 			<p style="margin: 15px 0 0 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
 				<strong><?php _e( 'Note:', 'voxel-payment-gateways' ); ?></strong>
-				<?php _e( 'Available payment methods depend on your Paystack account country and configuration.', 'voxel-payment-gateways' ); ?>
+				<?php _e( 'Available payment methods depend on your Paystack account country. For Kenya, enable Card and Mobile Money to accept M-Pesa payments.', 'voxel-payment-gateways' ); ?>
 			</p>
 		</div>
 	</div>

@@ -219,6 +219,12 @@ class Paystack_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pa
 			],
 		];
 
+		// Add payment channels if configured
+		$channels = $this->get_payment_channels();
+		if ( ! empty( $channels ) ) {
+			$transaction_data['channels'] = $channels;
+		}
+
 		return apply_filters( 'voxel/paystack/subscription-transaction-data', $transaction_data, $this->order );
 	}
 
@@ -231,6 +237,14 @@ class Paystack_Subscription extends \Voxel\Product_Types\Payment_Methods\Base_Pa
 			'action' => 'paystack.subscription.callback',
 			'order_id' => $this->order->get_id(),
 		], home_url('/') );
+	}
+
+	/**
+	 * Get configured payment channels
+	 */
+	protected function get_payment_channels(): array {
+		$channels = \Voxel\get( 'payments.paystack.channels', [] );
+		return apply_filters( 'voxel/paystack/channels', $channels, $this->order );
 	}
 
 	/**
