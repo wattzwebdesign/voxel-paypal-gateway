@@ -3,7 +3,7 @@
  * Plugin Name: Voxel Payment Gateways
  * Plugin URI: https://codewattz.com/voxel-payment-gateways/
  * Description: Payment gateway integrations for Voxel theme. Supports PayPal Checkout, subscriptions, and marketplace payments.
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Code Wattz
  * Author URI: https://codewattz.com
  * Text Domain: voxel-payment-gateways
@@ -21,7 +21,7 @@ if ( ! defined('ABSPATH') ) {
 }
 
 // Plugin constants
-define( 'VOXEL_GATEWAYS_VERSION', '2.1.0' );
+define( 'VOXEL_GATEWAYS_VERSION', '2.2.0' );
 define( 'VOXEL_GATEWAYS_FILE', __FILE__ );
 define( 'VOXEL_GATEWAYS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'VOXEL_GATEWAYS_URL', plugin_dir_url( __FILE__ ) );
